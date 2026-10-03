@@ -1,0 +1,3 @@
+# Environment files may contain credentials. Never commit them.
+.env
+.env.*
