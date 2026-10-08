@@ -54,3 +54,41 @@ Do not change production deployment behavior without explaining the impact first
 Prefer GitHub rulesets, branch protection, required reviews, real CI checks, environment approvals, and appropriate CODEOWNERS over informal instructions. Apply supported safe controls within the authorized scope and report settings blocked by connection permissions, GitHub plan, organization policy, or missing project requirements.
 
 At bootstrap, the repository has no application code, dependency configuration, tests, or CI workflow. Re-inspect this state for each task and use the setup status document to track gaps. These files do not themselves enable branch protection, production environments, or continuous monitoring.
+
+
+## AI orchestration workflow
+
+For substantial application features, fixes, refactors, integrations, security-sensitive work, and deployment-related changes, use the repository skills under `.agents/skills/`.
+
+### Required sequence
+
+1. Use `orchestrate-task` as the overall workflow.
+2. Use `preflight` before implementation.
+3. If preflight returns `ACTION_REQUIRED` or `BLOCKED`, stop implementation and report the required owner action or blocker.
+4. When an external API, dataset, SDK, hosted service, or integration choice is involved, use `integration-research` before implementation.
+5. Use `implementation` only after preflight is `READY`.
+6. Use `code-review` as an independent pass after implementation.
+7. Return valid review findings to implementation and repeat review/fix no more than three times.
+8. Use `testing` after implementation and after required fixes. A required failing check blocks progression.
+9. Use `security-review` when authentication, authorization, APIs, uploads, secrets, databases, webhooks, user data, or infrastructure security are affected.
+10. Use `release-readiness` before opening/finalizing a PR or promoting a release.
+
+### Role behavior
+
+Use only the roles required for the task: requirements/preflight, integration research, frontend, backend, database, reviewer, tester, security, and devops/release.
+
+If the installed Codex runtime provides independent task/subagent delegation, bounded independent work may be delegated. Do not allow concurrent writers to edit the same files.
+
+If independent subagent delegation is unavailable, execute the roles as explicit separate passes in the same Codex workflow. A reviewer pass must remain independent in purpose and must report findings instead of silently rewriting the implementation.
+
+### Supervised autonomy level
+
+This repository uses Level-2 supervised autonomy:
+
+- task branches, local implementation, review/fix iterations, testing, PR preparation, and eligible staging automation may proceed without per-step approval;
+- do not merge pull requests automatically;
+- do not create paid services, install system-wide software, change IAM/production permissions, or create production resources without owner action;
+- production deployment always requires explicit owner approval;
+- never request or expose secret values in source code, issues, pull requests, logs, or chat.
+
+The detailed setup and current limitations are documented in [docs/ai-orchestration-setup.md](docs/ai-orchestration-setup.md).
