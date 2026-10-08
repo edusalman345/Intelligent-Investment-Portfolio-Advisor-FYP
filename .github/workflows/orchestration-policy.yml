@@ -1,0 +1,100 @@
+name: Orchestration Policy Check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate-orchestration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate required orchestration files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required=(
+            "AGENTS.md"
+            ".agents/skills/orchestrate-task/SKILL.md"
+            ".agents/skills/preflight/SKILL.md"
+            ".agents/skills/integration-research/SKILL.md"
+            ".agents/skills/implementation/SKILL.md"
+            ".agents/skills/code-review/SKILL.md"
+            ".agents/skills/testing/SKILL.md"
+            ".agents/skills/security-review/SKILL.md"
+            ".agents/skills/release-readiness/SKILL.md"
+            "docs/ai-orchestration-setup.md"
+          )
+
+          for file in "${required[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              echo "::error::Missing required orchestration file: $file"
+              exit 1
+            fi
+          done
+
+      - name: Validate skill metadata
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          import sys
+
+          skill_files = sorted(Path(".agents/skills").glob("*/SKILL.md"))
+          if not skill_files:
+              print("No skills found", file=sys.stderr)
+              raise SystemExit(1)
+
+          names = set()
+          failed = False
+
+          for path in skill_files:
+              text = path.read_text(encoding="utf-8")
+              match = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+              if not match:
+                  print(f"{path}: missing YAML-style frontmatter", file=sys.stderr)
+                  failed = True
+                  continue
+
+              frontmatter = match.group(1)
+              name = re.search(r"^name:\s*(.+?)\s*$", frontmatter, re.M)
+              description = re.search(r"^description:\s*(.+?)\s*$", frontmatter, re.M)
+
+              if not name or not description:
+                  print(f"{path}: name and description are required", file=sys.stderr)
+                  failed = True
+                  continue
+
+              skill_name = name.group(1).strip()
+              if skill_name in names:
+                  print(f"{path}: duplicate skill name {skill_name}", file=sys.stderr)
+                  failed = True
+              names.add(skill_name)
+
+          if failed:
+              raise SystemExit(1)
+
+          print(f"Validated {len(skill_files)} skill manifests.")
+
+      - name: Reject obvious tracked secret files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          bad_files="$(git ls-files | grep -E '(^|/)(\.env($|\.)|id_rsa$|id_ed25519$|.*\.pem$|.*\.p12$|.*\.pfx$)' || true)"
+
+          if [[ -n "$bad_files" ]]; then
+            echo "::error::Potential secret-bearing files are tracked:"
+            echo "$bad_files"
+            exit 1
+          fi
+
+          echo "No obvious secret-bearing filenames are tracked."
