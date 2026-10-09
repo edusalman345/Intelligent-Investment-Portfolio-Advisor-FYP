@@ -1,0 +1,42 @@
+{
+    "name":  "ifms-p1",
+    "version":  "0.1.0",
+    "private":  true,
+    "type":  "module",
+    "workspaces":  [
+                       "apps/web",
+                       "services/api",
+                       "packages/contracts"
+                   ],
+    "scripts":  {
+                    "dev":  "concurrently -n api,web -c blue,green \"npm run dev -w @ifms/api\" \"npm run dev -w @ifms/web\"",
+                    "build":  "npm run build --workspaces --if-present",
+                    "typecheck":  "npm run typecheck --workspaces --if-present",
+                    "lint":  "eslint . --max-warnings 0",
+                    "test":  "npm run test --workspaces --if-present",
+                    "test:db":  "npm run test:db -w @ifms/api",
+                    "db:migrate":  "npm run db:migrate -w @ifms/api",
+                    "db:seed":  "npm run db:seed -w @ifms/api",
+                    "test:e2e":  "playwright test",
+                    "db:admin":  "npm run db:admin -w @ifms/api --"
+                },
+    "engines":  {
+                    "node":  "\u003e=26.8.1 \u003c27"
+                },
+    "devDependencies":  {
+                            "@eslint/js":  "10.0.1",
+                            "@playwright/test":  "1.64.0",
+                            "@types/node":  "26.6.4",
+                            "@types/supertest":  "7.2.1",
+                            "concurrently":  "10.0.6",
+                            "eslint":  "10.12.0",
+                            "globals":  "17.13.0",
+                            "supertest":  "7.3.1",
+                            "tsx":  "4.23.15",
+                            "typescript":  "6.0.3",
+                            "typescript-eslint":  "8.71.1"
+                        },
+    "allowScripts":  {
+                         "esbuild@0.28.2":  true
+                     }
+}
