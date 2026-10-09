@@ -13,8 +13,12 @@ Owner configuration is not a blocker to the credential-free implementation.
 Plan and implementation: complete for the approved three modules. Independent
 code review: **PASS**. Security review: **PASS** for the implemented local scope.
 Release-readiness: **READY_FOR_PR**; the staged secret-file policy passed.
-Real Google end-to-end verification: **ACTION_REQUIRED**. This is not a production
-or staging deployment approval.
+Real Google login, account creation, protected-page access and logout:
+**PASS on 2026-10-09**, with owner browser interaction and backend corroboration.
+Live explicit password-account linking remains **ACTION_REQUIRED**; its local
+integration tests pass. The owner has saved a replacement development secret;
+verification after that replacement remains **ACTION_REQUIRED**. This is not a
+production or staging approval.
 
 Three total review/fix rounds were used. Round 1 corrected session-preserving
 `REAUTH_REQUIRED`, names-only environment policy, disposable database guards,
@@ -29,11 +33,53 @@ to shrink. No unresolved CRITICAL/HIGH findings remain in committed source.
 
 During final review, populated Google assignments were found in the local
 `.env.example` and exposed by a tool read. They were preserved privately in an
-ignored backup, removed from the template, and never committed or used for
-authentication. Candidate source was checked for the original values without
-printing them. **Owner must rotate that client secret before real OAuth use.**
+ignored backup, removed from the template, and never committed. They were not
+used during the initial mocked validation. Candidate source was checked for the
+original values without printing them. The later real verification and secret
+rotation are recorded below.
+
+## Real Google callback verification, 2026-10-09
+
+The owner corrected the exact authorized redirect URI to
+`http://localhost:3001/api/v1/auth/google/callback`. The API was restarted with
+the private development configuration. Equality/presence checks confirmed the
+configured callback and authorization request without displaying values. A
+successful Google code exchange confirms that the running client ID and secret
+authenticate together. The first real run used the previously exposed secret.
+The owner subsequently reported rotation and privately saved a replacement;
+comparison confirms that it differs from the exposed value. The normal API was
+restarted again; its replacement-secret browser verification is pending.
+
+A fresh owner browser login from `http://localhost:5173/login` completed Google
+sign-in, returned to the app, opened a protected page and logged out. Fixed-label
+development observations corroborated matching state/browser binding, an
+unexpired transaction consumed once, a PKCE verifier, code exchange, Google
+ID-token validation, matching nonce, verified email, account/preferences/identity
+creation, session creation and transaction commit. Database evidence was one
+Google identity, `GOOGLE_REGISTER` and `GOOGLE_LOGIN` audit records, one revoked
+session and no active sessions after logout. No account identifiers are recorded.
+
+The earlier generic callback failure did not recur after restart and consistent
+`localhost` use; its exact historical cause is unconfirmed. A cookie created for
+`127.0.0.1` cannot bind a callback at `localhost`, so use the documented hostname
+consistently. No application defect or weakening of validation was required.
+The temporary observer was removed and the normal API restarted. Its two review
+findings concerned observer overload/startup handling; removal resolves them
+without retaining diagnostic code. During this diagnostic flow, no raw
+exceptions, credentials, codes, cookies or tokens were emitted or committed.
+Linking, replay, expiry and revoked
+linking-session rejection remain covered by injected-provider integration tests,
+not claimed as newly completed live Google scenarios.
 
 ## Latest local checks
+
+On 2026-10-09, the OAuth investigation reran `npm run lint`,
+`npm run typecheck`, `npm test` (22 frontend and 15 API unit tests), and
+`npm run test:db` (39 serial integration tests) successfully. Secret-policy tests
+and source checks passed; normal API `/health` and `/ready` returned HTTP 200
+after removing the observer. No application source changed. Builds, analytics
+and the synthetic Playwright workflow below are the earlier 2026-10-08 results;
+they were not rerun locally for this documentation-only update.
 
 Commands ran from the repository root unless a working directory is stated.
 These are fresh results after the saved corrections, not inherited old results.
@@ -69,7 +115,8 @@ latest commit IDs and remote GitHub checks are recorded in the PR.
 | Candidate filename/content scan, original Google-value comparison and package BOM/JSON checks | PASS | No credential values printed; original credentials absent from intended files |
 | `git diff --check` | PASS | No whitespace errors |
 | `python scripts/check_secret_files.py` against final staged index | PASS | Exact proposed template contains names only; real environment/credential files rejected |
-| Real Google sign-in/linking against Cloud Console | ACTION_REQUIRED | Rotate exposed secret, privately configure client and exact callback, then verify |
+| Real Google login/account creation/protected page/logout | PASS | Owner browser confirmation and sanitized callback/database evidence on 2026-10-09 |
+| Live explicit password-account linking / replacement-secret verification | ACTION_REQUIRED | Linking has integration coverage; replacement secret saved, repeat real flow pending |
 | Live Alpha Vantage / Yahoo / news / OpenAI / datasets / ML | SKIPPED | Owner-deferred; synthetic market workflow and injected provider tests are sufficient for this checkpoint |
 | AWS / Docker local setup / staging / production deployment | SKIPPED | Owner-deferred; no deployment performed |
 
@@ -123,24 +170,24 @@ Origin checks; restricted credentialed CORS; rate limits; fixed-host bounded
 provider requests; sanitized errors/logs; dependency audits; and names-only
 environment templates. No implicit email-only Google linking is allowed.
 
-This verifies source and local mocked/integration behavior. It does not verify
-real Google console settings, live financial data, production database-role
-permissions, mail delivery, hosting, backups or deployment. The test cluster's
+This verifies source, local mocked/integration behavior and the real Google
+login flow described above. It does not verify live explicit account linking,
+live financial data, production database-role permissions, mail delivery,
+hosting, backups or deployment. The test cluster's
 loopback trust configuration is disposable and must not become a production
 database configuration. Production work needs its own preflight and approval.
 
 ## Owner actions and Git handling
 
-1. Rotate the exposed Google client secret. Configure the development Web OAuth
-   client, identity scopes/test audience and exact callback
-   `http://localhost:3001/api/v1/auth/google/callback`. Privately set
-   `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `GOOGLE_CALLBACK_URL`; perform
-   real sign-in, creation, repeat login, linking and cancellation/replay checks.
+1. The owner has rotated and privately replaced `GOOGLE_CLIENT_SECRET` and the
+   normal API was restarted. Repeat login/logout to verify the replacement. The
+   client/callback worked in the initial real sign-in/creation/logout run.
+   Live repeat login and explicit linking should still be exercised separately.
    Follow [google-oauth-setup.md](google-oauth-setup.md).
-2. For normal development outside the disposable tests, set a dedicated local
-   PostgreSQL role/database in ignored `DATABASE_URL`, then migrate/seed/start
-   using the [README](../README.md). No paid provider, OpenAI, AWS or Docker setup
-   is needed for the current demo.
+2. Local `fyp_portfolio_dev` now connects and has the existing foundation
+   migration and synthetic seed. Its 22 tables, 51 indexes and 229 constraints
+   match the validated migration schema. Keep `DATABASE_URL` private; no paid
+   provider, OpenAI, AWS or Docker setup is needed for this demo.
 3. Human PR review/merge authorization remains outstanding. Agents have not
    self-approved a GitHub review or merged any PR.
 
@@ -148,7 +195,8 @@ P1 is stacked on `chore/ai-orchestration`, whose existing PR targets
 `chore/repository-management`; that branch's existing PR targets `main`. Prepare
 the P1 PR into **`chore/ai-orchestration`**, preserving that stack. Push only
 `feature/p1-auth-portfolio-market` with its own upstream. Use a HIGH RISK draft PR
-while real Google verification and human approval remain outstanding.
+while replacement-secret verification, live explicit linking and human approval remain
+outstanding.
 
 Commit scope: `apps/web`, `services/api`, `services/analytics`, shared contracts,
 database migration, scripts/tests, root package/lock/TypeScript/lint/Playwright

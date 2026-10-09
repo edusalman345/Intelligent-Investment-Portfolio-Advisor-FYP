@@ -1,16 +1,19 @@
 # Google Login setup for P1
 
 Google Login is implemented in the authentication module using a backend
-authorization-code flow. Real Google end-to-end verification is pending in this phase.
-**ACTION_REQUIRED: owner setup and real Google end-to-end verification.** Mocked
-provider/unit/PostgreSQL validation can continue independently.
+authorization-code flow. **PASS: real Google login, account creation, protected
+page access and logout on 2026-10-09**, corroborated by backend validation and
+owner browser confirmation. The owner has privately replaced the exposed
+development secret. **ACTION_REQUIRED: verify that replacement; live explicit account linking
+remains unverified.** See [the validation record](p1-validation.md).
 
 ## Owner configuration
 
-Rotate the Google client secret that was entered into `.env.example` and exposed
-in a reviewer tool read. Its values have been removed from the template and were
-not committed or used. Put only the replacement credentials in an ignored `.env`
-or private process environment before real verification.
+The previously exposed Google secret was removed from `.env.example` and was
+never committed. The owner reported rotation on 2026-10-09 and privately saved a
+replacement; comparison confirmed a different value. Keep credentials only in
+an ignored `.env` or private process environment. The real verification history
+and its remaining live scenarios are recorded in the validation document.
 
 1. Open Google Cloud Console and select/create a development project. In **Google
    Auth Platform → Branding**, configure the app name, support email and developer
@@ -90,5 +93,6 @@ Unconfigured Google Login is disabled in the UI and returns a configuration erro
 from the API. Automated browser tests deliberately keep credentials empty;
 injected Google providers exercise protocol and account behavior locally. Those
 tests do **not** prove that real console credentials, redirect registration or
-Google's consent screen work. Record that separate end-to-end check as
-ACTION_REQUIRED until completed.
+Google's consent screen work. The real login flow has now passed separately;
+retain ACTION_REQUIRED for individual live scenarios or replacement credentials
+that have not been tested.

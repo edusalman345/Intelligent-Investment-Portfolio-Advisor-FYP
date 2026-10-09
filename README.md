@@ -65,7 +65,7 @@ names privately when needed:
 | `HOST`, `PORT` | API `127.0.0.1`, `3001` |
 | `NODE_ENV` | `development`; production enables Secure cookies and disables local reset delivery |
 | `SESSION_HOURS` | `24`, supported range 1–168 |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` | Optional until real Google verification; see the [Google setup guide](docs/google-oauth-setup.md) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` | Required for Google Login; keep private; see the [Google setup guide](docs/google-oauth-setup.md) |
 | `MARKET_PROVIDER` | `fixture`; optional `alpha-vantage` adapter |
 | `ALPHA_VANTAGE_API_KEY` | Needed only for the optional free daily-data adapter |
 | `QUOTE_MAX_AGE_HOURS` | `72`, supported range 1–720 |
