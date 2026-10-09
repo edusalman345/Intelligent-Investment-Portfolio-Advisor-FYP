@@ -3,9 +3,10 @@
 Google Login is implemented in the authentication module using a backend
 authorization-code flow. **PASS: real Google login, account creation, protected
 page access and logout on 2026-10-09**, corroborated by backend validation and
-owner browser confirmation. The owner has privately replaced the exposed
-development secret. **ACTION_REQUIRED: verify that replacement; live explicit account linking
-remains unverified.** See [the validation record](p1-validation.md).
+owner browser confirmation. **PASS: replacement-secret verification, existing
+identity reuse, live explicit password-account linking, subsequent Google login
+to that same account, and same-email implicit-link rejection.** The exposed
+development secret was privately replaced. See [the validation record](p1-validation.md).
 
 ## Owner configuration
 
@@ -13,7 +14,7 @@ The previously exposed Google secret was removed from `.env.example` and was
 never committed. The owner reported rotation on 2026-10-09 and privately saved a
 replacement; comparison confirmed a different value. Keep credentials only in
 an ignored `.env` or private process environment. The real verification history
-and its remaining live scenarios are recorded in the validation document.
+and completed owner-interactive scenarios are recorded in the validation document.
 
 1. Open Google Cloud Console and select/create a development project. In **Google
    Auth Platform → Branding**, configure the app name, support email and developer
@@ -93,6 +94,8 @@ Unconfigured Google Login is disabled in the UI and returns a configuration erro
 from the API. Automated browser tests deliberately keep credentials empty;
 injected Google providers exercise protocol and account behavior locally. Those
 tests do **not** prove that real console credentials, redirect registration or
-Google's consent screen work. The real login flow has now passed separately;
-retain ACTION_REQUIRED for individual live scenarios or replacement credentials
-that have not been tested.
+Google's consent screen work. Real replacement-secret login, protected-page
+access, logout, explicit linking and same-email rejection have now passed
+separately with owner browser interaction. Negative replay/expiry/revoked-linking
+cases retain local integration coverage. Future credentials or deployment
+environments require their own verification.

@@ -15,10 +15,11 @@ code review: **PASS**. Security review: **PASS** for the implemented local scope
 Release-readiness: **READY_FOR_PR**; the staged secret-file policy passed.
 Real Google login, account creation, protected-page access and logout:
 **PASS on 2026-10-09**, with owner browser interaction and backend corroboration.
-Live explicit password-account linking remains **ACTION_REQUIRED**; its local
-integration tests pass. The owner has saved a replacement development secret;
-verification after that replacement remains **ACTION_REQUIRED**. This is not a
-production or staging approval.
+Replacement-secret login, existing-identity account reuse, live explicit
+password-account linking and same-email takeover prevention: **PASS on
+2026-10-09**. Owner browser confirmations are corroborated by non-secret database
+relationships and sanitized real-provider observations. This is not a production
+or staging approval; full P1 UAT has not started.
 
 Three total review/fix rounds were used. Round 1 corrected session-preserving
 `REAUTH_REQUIRED`, names-only environment policy, disposable database guards,
@@ -48,7 +49,8 @@ successful Google code exchange confirms that the running client ID and secret
 authenticate together. The first real run used the previously exposed secret.
 The owner subsequently reported rotation and privately saved a replacement;
 comparison confirms that it differs from the exposed value. The normal API was
-restarted again; its replacement-secret browser verification is pending.
+restarted again; replacement-secret browser verification subsequently passed,
+including protected-page access and application logout.
 
 A fresh owner browser login from `http://localhost:5173/login` completed Google
 sign-in, returned to the app, opened a protected page and logged out. Fixed-label
@@ -67,9 +69,51 @@ The temporary observer was removed and the normal API restarted. Its two review
 findings concerned observer overload/startup handling; removal resolves them
 without retaining diagnostic code. During this diagnostic flow, no raw
 exceptions, credentials, codes, cookies or tokens were emitted or committed.
-Linking, replay, expiry and revoked
-linking-session rejection remain covered by injected-provider integration tests,
-not claimed as newly completed live Google scenarios.
+Replay, expiry and revoked linking-session rejection retain injected-provider
+integration coverage; those negative protocol cases are not claimed as newly
+completed live Google scenarios.
+
+### Completed owner-interactive acceptance
+
+The replacement credentials authenticated real Google identities successfully.
+Repeat logins reused existing identity associations. For the explicit-linking
+scenario, a password account was created first using the exact email of a Google
+identity not yet used in the app, then signed in normally. A Google login attempt
+while signed out verified the real identity but was rejected: the password
+account stayed unlinked, no session was created, and user/identity/Google-audit
+counts stayed unchanged. This exercises the explicit-link requirement rather
+than merely observing an unrelated provider failure.
+
+The owner then signed in with the password, initiated Link Google from Account &
+security, confirmed the current password and completed real Google OAuth. The
+callback retained the initiating authenticated user; the identity and
+`GOOGLE_LINK` audit belong to that same password account. Logout followed by
+Google login returned to that account, opened a protected page and logged out.
+The owner additionally confirmed that `/portfolios` redirected to login after
+application sign-out. Database correlation confirms that the latest Google
+session is revoked; all development sessions are inactive at this checkpoint.
+
+| Non-secret evidence | Users | Google identities | Google registrations | Google logins | Google links |
+|---|---:|---:|---:|---:|---:|
+| Password account prepared before collision check | 4 | 2 | 2 | 4 | 0 |
+| Rejected same-email Google login | 4 | 2 | 2 | 4 | 0 |
+| Explicit linking completed | 4 | 3 | 2 | 4 | 1 |
+| Subsequent Google login and logout | 4 | 3 | 2 | 5 | 1 |
+
+The user count did not change during rejection, linking or subsequent Google
+login. The new identity belongs to the original password user; no duplicate user
+was created and no implicit email-only takeover occurred. Expected audit types
+include `AUTH_REGISTER`, `AUTH_LOGIN`, `GOOGLE_REGISTER`, `GOOGLE_LOGIN` and
+`GOOGLE_LINK`; logout is corroborated by session revocation, not an invented
+logout audit event. An earlier Google-first signup followed by password setup
+also worked, but did not qualify as the explicit-linking scenario.
+
+The local acceptance observer emitted only fixed categories and relationship
+booleans, delegated the unchanged real Google provider and application, and was
+removed after verification. The normal API was restored. No application code,
+migration or security control changed. Temporary observations and private
+correlation data remain ignored; no emails, subjects, account identifiers, codes,
+cookies, tokens or credential values are included in this evidence.
 
 ## Latest local checks
 
@@ -116,7 +160,9 @@ latest commit IDs and remote GitHub checks are recorded in the PR.
 | `git diff --check` | PASS | No whitespace errors |
 | `python scripts/check_secret_files.py` against final staged index | PASS | Exact proposed template contains names only; real environment/credential files rejected |
 | Real Google login/account creation/protected page/logout | PASS | Owner browser confirmation and sanitized callback/database evidence on 2026-10-09 |
-| Live explicit password-account linking / replacement-secret verification | ACTION_REQUIRED | Linking has integration coverage; replacement secret saved, repeat real flow pending |
+| Replacement-secret login and existing-identity reuse | PASS | Real Google session, protected page, logout and stable account association |
+| Live explicit password-account linking | PASS | Password-authenticated initiation, real callback, same user/identity association, subsequent Google login |
+| Same-email implicit-link rejection / duplicate prevention | PASS | Verified identity rejected before linking; no new user or session; explicit link adds only the association |
 | Live Alpha Vantage / Yahoo / news / OpenAI / datasets / ML | SKIPPED | Owner-deferred; synthetic market workflow and injected provider tests are sufficient for this checkpoint |
 | AWS / Docker local setup / staging / production deployment | SKIPPED | Owner-deferred; no deployment performed |
 
@@ -171,7 +217,7 @@ provider requests; sanitized errors/logs; dependency audits; and names-only
 environment templates. No implicit email-only Google linking is allowed.
 
 This verifies source, local mocked/integration behavior and the real Google
-login flow described above. It does not verify live explicit account linking,
+login and explicit-linking flows described above. It does not verify
 live financial data, production database-role permissions, mail delivery,
 hosting, backups or deployment. The test cluster's
 loopback trust configuration is disposable and must not become a production
@@ -179,11 +225,10 @@ database configuration. Production work needs its own preflight and approval.
 
 ## Owner actions and Git handling
 
-1. The owner has rotated and privately replaced `GOOGLE_CLIENT_SECRET` and the
-   normal API was restarted. Repeat login/logout to verify the replacement. The
-   client/callback worked in the initial real sign-in/creation/logout run.
-   Live repeat login and explicit linking should still be exercised separately.
-   Follow [google-oauth-setup.md](google-oauth-setup.md).
+1. Google owner setup and the requested real acceptance checks are complete.
+   The replacement secret, repeat login, explicit linking, same-email rejection,
+   protected-page access and logout passed. Keep configuration private; see
+   [google-oauth-setup.md](google-oauth-setup.md).
 2. Local `fyp_portfolio_dev` now connects and has the existing foundation
    migration and synthetic seed. Its 22 tables, 51 indexes and 229 constraints
    match the validated migration schema. Keep `DATABASE_URL` private; no paid
@@ -195,8 +240,8 @@ P1 is stacked on `chore/ai-orchestration`, whose existing PR targets
 `chore/repository-management`; that branch's existing PR targets `main`. Prepare
 the P1 PR into **`chore/ai-orchestration`**, preserving that stack. Push only
 `feature/p1-auth-portfolio-market` with its own upstream. Use a HIGH RISK draft PR
-while replacement-secret verification, live explicit linking and human approval remain
-outstanding.
+while human approval remains outstanding. Google acceptance does not replace
+full P1 UAT or authorize merge/deployment.
 
 Commit scope: `apps/web`, `services/api`, `services/analytics`, shared contracts,
 database migration, scripts/tests, root package/lock/TypeScript/lint/Playwright
