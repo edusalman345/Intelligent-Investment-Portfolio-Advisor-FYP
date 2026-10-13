@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Validate required orchestration files
         shell: bash
@@ -85,16 +85,6 @@ jobs:
           print(f"Validated {len(skill_files)} skill manifests.")
 
       - name: Reject obvious tracked secret files
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          bad_files="$(git ls-files | grep -E '(^|/)(\.env($|\.)|id_rsa$|id_ed25519$|.*\.pem$|.*\.p12$|.*\.pfx$)' || true)"
-
-          if [[ -n "$bad_files" ]]; then
-            echo "::error::Potential secret-bearing files are tracked:"
-            echo "$bad_files"
-            exit 1
-          fi
-
-          echo "No obvious secret-bearing filenames are tracked."
+        run: python scripts/check_secret_files.py
+      - name: Test secret-file policy
+        run: python -m unittest discover -s scripts -p 'test_secret_files.py'
