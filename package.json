@@ -20,12 +20,10 @@
                     "test:e2e":  "playwright test",
                     "db:admin":  "npm run db:admin -w @ifms/api --"
                 },
-    // "engines":  {
-    //                 "node":  "\u003e=26.8.1 \u003c27"
-    //             },
-    "engines": {
-  "node": "24.x"
-},
+ 
+    "engines":  {
+                    "node": "24.x"
+               },
     "devDependencies":  {
                             "@eslint/js":  "10.0.1",
                             "@playwright/test":  "1.64.0",
