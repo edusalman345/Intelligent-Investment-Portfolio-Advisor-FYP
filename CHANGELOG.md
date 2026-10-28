@@ -1,5 +1,30 @@
 # Project changelog
 
+## 28 October 2026 IIPA branding alignment
+
+Status: COMPLETE; validated locally, with independent review PASS (round 1).
+
+Owner decision: use Intelligent Investment Portfolio Advisor (IIPA) for current
+application presentation despite the supplied proposal's earlier IFMS title.
+The proposal and historical audit records are preserved. No feature scope or
+business logic changes are included.
+
+Changed areas: frontend auth/workspace/subscription copy, browser metadata and
+SVG favicon, password-reset subject, API startup label, optional analytics title,
+current README/PRD/TRD/database titles and branding/UI documentation. Legacy
+package names, routes, database schemas/migrations, cookies and environment
+variables remain unchanged. New branding regression assertions and UI evidence
+verify desktop/mobile presentation. See docs/branding.md for retained references.
+
+Validation PASS: lint, TypeScript, 35 frontend tests, 27 API unit tests, 56 serial
+PostgreSQL integrations, frontend/API builds, five analytics tests and Ruff.
+Browser checks: three fixture workflows PASS (branding, existing P1 and
+subscriptions); real-only case skipped in fixture mode, then the separate
+five-stock real-data/reset-email workflow PASS. DOCX rendering, semantic checks,
+independent review and secret scan PASS. New UI evidence is under
+`docs/ui-evidence/iipa-branding-2026-10-28/`.
+All changes stay local; no push, merge or deployment.
+
 ## 27 October 2026 Subscription Plans prototype enhancement
 
 Status: COMPLETE for the separately scoped local prototype enhancement.

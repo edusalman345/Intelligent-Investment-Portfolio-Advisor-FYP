@@ -1,4 +1,4 @@
-# IFMS analytics foundation
+# IIPA analytics foundation
 
 The P1 FastAPI service provides `GET /health` and `GET /ready`, with the service
 name and phase in each JSON response. Readiness means this health-only process

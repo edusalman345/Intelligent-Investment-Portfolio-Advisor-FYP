@@ -1,4 +1,12 @@
-# Intelligent Investment Portfolio Advisor — P1 Mid
+# Intelligent Investment Portfolio Advisor (IIPA) — P1 Mid
+
+Application branding is **IIPA - Intelligent Investment Portfolio Advisor**, as
+explicitly approved by the owner on 28 October 2026. The supplied proposal uses
+the earlier title Intelligent Financial Management System. That source and all
+historical audit findings remain preserved; this is an authorized branding
+decision, not a change to the 15 approved features. Internal `@ifms` packages,
+service/cookie identifiers and legacy document filenames remain compatible.
+See the [branding decision and reference inventory](docs/branding.md).
 
 P1 implements the three modules selected in the approved Proposal, PRD and TRD:
 User Authentication, Portfolio Management and Market Data Management. The React

@@ -339,3 +339,6 @@ tbody tr:hover { background: #fdfefb; }
 .subscription-assurance strong { color: #49604f; }
 @media (max-width: 900px) { .subscription-grid { grid-template-columns: 1fr; max-width: 600px; }.subscription-card { padding: 25px; }.subscription-description { min-height: 0; } }
 @media (max-width: 620px) { .subscription-card { padding: 24px 21px; }.subscription-grid { gap: 19px; }.subscription-card h2 { font-size: 26px; }.subscription-assurance { padding-top: 20px; } }
+
+/* Owner-approved IIPA name; existing palette and layout retained. */
+.auth-project-name { font-size: 11px; line-height: 1.7; color: #688854; margin-bottom: 15px; font-weight: 600; }

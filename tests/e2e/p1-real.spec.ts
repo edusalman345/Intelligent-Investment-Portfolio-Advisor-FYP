@@ -154,6 +154,7 @@ test('real stored OHLCV powers buy/sell holdings, valuation, watchlists and secu
   expect(delivered.length).toBe(1);
   const message = JSON.parse(await readFile(new URL(delivered[0]!, outbox), 'utf8'));
   // The private local delivery is read in memory only; never print its URL/token or retain a trace.
+  expect(message.subject).toBe('Reset your IIPA password');
   const reset = new URL(message.resetUrl);
   const token = reset.searchParams.get('token');
   expect(Boolean(token)).toBe(true);

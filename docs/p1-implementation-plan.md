@@ -178,3 +178,13 @@ included. Acceptance checks cover protected routing, both plan presentations,
 read-only API authentication, catalog constraints, fresh/repeated migrations and
 existing P1 regressions. Enhancement-only results belong in the separate section
 of [p1-validation.md](p1-validation.md); the original 15-feature matrix is retained.
+
+
+## Application branding decision dated 28 October 2026
+
+The owner authorized IIPA (Intelligent Investment Portfolio Advisor) as the
+application brand after confirming the supplied proposal's earlier IFMS title.
+See [branding.md](branding.md) for source reconciliation and retained identifiers.
+The visual palette, original 15 approved features, Subscription Plans scope and
+all database/API/internal contracts remain unchanged. Historical audit evidence
+retains its original branding and findings.

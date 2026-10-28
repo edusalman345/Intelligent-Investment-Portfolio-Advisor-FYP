@@ -26,10 +26,10 @@ export function SubscriptionPage() {
             : <div className="subscription-future"><Clock3 size={18}/><strong>Coming Soon</strong><span>No price announced</span></div>}
           <h3>{free ? 'Included in your workspace' : 'Planned capabilities'}</h3>
           <ul className="subscription-features">{(free ? freeFeatures : proFeatures).map(feature => <li key={feature}><Check size={17} aria-hidden="true"/><span>{feature}</span></li>)}</ul>
-          <div className="subscription-card-footer">{free ? 'Included with every IFMS account' : 'Not available yet. Pro cannot be purchased.'}</div>
+          <div className="subscription-card-footer">{free ? 'Included with every IIPA account' : 'Not available yet. Pro cannot be purchased.'}</div>
         </section>;
       })}
     </div>}
-    <div className="subscription-assurance"><Check size={19} aria-hidden="true"/><p><strong>Your current access stays the same.</strong> All users retain existing IFMS functionality. Pro features are planned and are not available in this prototype.</p></div>
+    <div className="subscription-assurance"><Check size={19} aria-hidden="true"/><p><strong>Your current access stays the same.</strong> All users retain existing IIPA functionality. Pro features are planned and are not available in this prototype.</p></div>
   </>;
 }

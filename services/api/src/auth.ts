@@ -84,7 +84,7 @@ export function createAuthRouter({ pool, config, google: injectedGoogle, sendRes
     if (config.nodeEnv === 'production') throw new HttpError(503, 'MAIL_UNAVAILABLE', 'Password recovery delivery is not configured.');
     await mkdir(config.mailOutputDir, { recursive: true, mode: 0o700 });
     // Development-only private, ignored file. Never log or return a reset token.
-    await writeFile(join(config.mailOutputDir, `${randomUUID()}.json`), JSON.stringify({ to: email, subject: 'Reset your IFMS password', resetUrl }, null, 2),
+    await writeFile(join(config.mailOutputDir, `${randomUUID()}.json`), JSON.stringify({ to: email, subject: 'Reset your IIPA password', resetUrl }, null, 2),
       { flag: 'wx', mode: 0o600 });
   });
 

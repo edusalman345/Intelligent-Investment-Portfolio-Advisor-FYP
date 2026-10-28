@@ -39,7 +39,7 @@ it('marks Pro unavailable with no price, checkout, or purchase action', async ()
   expect(within(pro).queryByRole('button')).not.toBeInTheDocument();
   expect(within(pro).queryByRole('link')).not.toBeInTheDocument();
   for (const feature of ['Planned AI insights', 'Portfolio risk analysis', 'Forecasting', 'Intelligent alerts']) expect(within(pro).getByText(feature)).toBeVisible();
-  expect(screen.getByText(/All users retain existing IFMS functionality/)).toBeVisible();
+  expect(screen.getByText(/All users retain existing IIPA functionality/)).toBeVisible();
 });
 
 it('reports catalog failure and supports retry without inventing a plan price', async () => {

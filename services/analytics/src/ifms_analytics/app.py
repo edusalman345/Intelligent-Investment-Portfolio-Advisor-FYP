@@ -14,7 +14,7 @@ class ServiceStatus(BaseModel):
 
 def create_app() -> FastAPI:
     application = FastAPI(
-        title="IFMS Analytics Foundation",
+        title="IIPA Analytics Foundation",
         description="P1 process health only. Analytics capabilities are deferred.",
         version="0.1.0",
     )

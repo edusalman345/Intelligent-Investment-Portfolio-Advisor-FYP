@@ -1,0 +1,46 @@
+import { expect, test } from '@playwright/test';
+
+const name = 'Intelligent Investment Portfolio Advisor';
+
+test('IIPA branding appears across auth, workspace, metadata and subscription on desktop and mobile', async ({ page }, info) => {
+  await page.goto('/login');
+  await expect(page).toHaveTitle(`IIPA - ${name}`);
+  await expect(page.getByText(name, { exact: true })).toBeVisible();
+  await expect(page.locator('meta[name="application-name"]')).toHaveAttribute('content', 'IIPA');
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', new RegExp(name));
+  const icon = await page.request.get('/favicon.svg');
+  expect(icon.status()).toBe(200);
+  expect((await icon.text()).includes('>IIPA</title>')).toBe(true);
+  await expect(page.locator('body')).not.toContainText('IFMS');
+  await page.screenshot({ path: info.outputPath('iipa-login-desktop.png'), fullPage: true, animations: 'disabled' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await expect(page.getByText(name, { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath('iipa-login-mobile.png'), fullPage: true, animations: 'disabled' });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/register');
+  await expect(page.getByText(name, { exact: true })).toBeVisible();
+  await page.screenshot({ path: info.outputPath('iipa-register-desktop.png'), fullPage: true, animations: 'disabled' });
+  await page.getByLabel('Your name').fill('Branding Investor');
+  await page.getByLabel('Email address').fill('branding-browser@example.test');
+  await page.getByLabel(/^Password/).fill('Branding browser passphrase');
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
+  await expect(page.locator('.sidebar .brand')).toContainText('IIPA');
+  await expect(page.locator('.header-context')).toContainText('IIPA workspace');
+  await expect(page.locator('.workspace-footer')).toContainText('IIPA');
+  await expect(page.locator('.loading-state')).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath('iipa-dashboard-desktop.png'), fullPage: true, animations: 'disabled' });
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Subscription Plans' }).click();
+  await expect(page.getByText('Included with every IIPA account', { exact: true })).toBeVisible();
+  await expect(page.locator('body')).not.toContainText('IFMS');
+  await page.screenshot({ path: info.outputPath('iipa-subscription-desktop.png'), fullPage: true, animations: 'disabled' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath('iipa-subscription-mobile.png'), fullPage: true, animations: 'disabled' });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await expect(page).toHaveURL(/\/login$/);
+});

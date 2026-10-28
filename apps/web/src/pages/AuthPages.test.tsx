@@ -56,3 +56,13 @@ describe('authentication forms', () => {
     expect(screen.getByText(/Your password has been reset/)).toBeVisible();
   });
 });
+
+
+for (const mode of ['login', 'register'] as const) {
+  it(`shows the approved IIPA name on ${mode} without changing form actions`, () => {
+    render(<MemoryRouter><AuthPage mode={mode}/></MemoryRouter>);
+    expect(screen.getByText('Intelligent Investment Portfolio Advisor', { exact: true })).toBeVisible();
+    expect(screen.queryByText(/IFMS|Intelligent Financial Management System/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: mode === 'login' ? 'Sign in' : 'Create account' })).toBeEnabled();
+  });
+}
