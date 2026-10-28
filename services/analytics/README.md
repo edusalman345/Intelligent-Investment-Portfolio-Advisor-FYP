@@ -13,6 +13,7 @@ From `services/analytics`, create a project-local environment and install:
 
 ```powershell
 python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip==26.2.1
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 .\.venv\Scripts\python.exe -m uvicorn ifms_analytics.app:app --host 127.0.0.1 --port 8001 --reload
 ```
@@ -29,10 +30,13 @@ Run validation from the same directory:
 .\.venv\Scripts\python.exe -m ruff check .
 .\.venv\Scripts\python.exe -m ruff format --check .
 .\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe -m pip_audit --skip-editable --progress-spinner off
 ```
 
 Direct runtime, development, and build dependencies are pinned in
 `pyproject.toml`. Transitive dependencies are resolved by pip during installation.
+The development extra also pins patched `certifi` and `filelock` releases so
+existing environments do not retain the vulnerable versions found by the audit.
 Add a reviewed lock strategy when deployment reproducibility is defined.
 
 Financial and ML endpoints are deferred. Introducing those features requires a

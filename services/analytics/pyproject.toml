@@ -19,6 +19,9 @@ dev = [
     "pytest==9.1.1",
     "ruff==0.16.10",
     "pip-audit==2.10.1",
+    # Patched development HTTP trust store and tooling lock dependency.
+    "certifi==2026.10.19",
+    "filelock==4.2.1",
 ]
 
 [tool.hatch.build.targets.wheel]
