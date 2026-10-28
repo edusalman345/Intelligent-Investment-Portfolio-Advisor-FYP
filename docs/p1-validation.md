@@ -10,8 +10,9 @@ Real AAPL/MSFT/NVDA/TSLA/AVGO quotes and 100 daily OHLCV bars each have been
 verified in local PostgreSQL. Dynamic provider discovery is implemented in this
 same working tree. The five-stock real-data browser journey, 53 serial database
 integrations, 28 frontend tests, 27 API unit tests and focused independent review
-pass. Real mode excludes synthetic prices. Final owner retest of the corrected
-TSLA/AVGO search issue remains pending; full owner UAT is not claimed.
+pass. Real mode excludes synthetic prices. The owner confirmed TSLA/AVGO search and selection work on 27 October, closing
+the remaining market-search UAT item. P1 Mid is ready for the local demo under
+the explicitly accepted prototype limitations.
 The owner has instructed **no pushes or deployments** pending Vercel settings
 verification. No claim of current remote CI or deployment readiness is made.
 

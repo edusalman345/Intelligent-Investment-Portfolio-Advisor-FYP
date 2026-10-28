@@ -56,8 +56,9 @@ buy/sell transactions, valuation and watchlist membership. Unit/integration
 coverage exercises previously unknown discovery, duplicates, foreign/non-equity
 filtering, strict input, CSRF/origin/auth, cache reuse and shared quotas.
 The browser uses recorded actual observations without provider egress; it is
-separate from the live provider verification. Final owner retest of the reported
-search issue is pending; automated acceptance is PASS, owner UAT is not asserted.
+separate from the live provider verification. The owner confirmed on 27 October that TSLA/AVGO search and selection work.
+This closes the reported market-search UAT failure. Automated acceptance and
+the remaining owner search retest are PASS.
 
 Owner-confirmed protected-route logout acceptance is **PASS**: `/dashboard`
 redirects to `/login` after sign-out. The route currently reaches the protected
@@ -194,7 +195,8 @@ provider quotas, the local recovery outbox, snapshots, USD-only holdings and
 separate cash on 27 October. Production mail, reconstructed daily performance
 and expanded live economic feeds may remain future work. Dynamic stock discovery
 was expressly **not** an accepted limitation and has now been implemented and
-automatically verified; final owner retest remains pending.
+automatically verified, with the owner confirming TSLA/AVGO search and selection
+on 27 October. This limitation is resolved.
 
 ## Deployment investigation and readiness
 
@@ -234,8 +236,8 @@ application limit was weakened. On resumption, the first serial integration
 attempt failed because disposable PostgreSQL was stopped; it was restarted and
 all 53 integrations passed. These failures are not hidden or counted as passes.
 
-Recommendation: **READY for the local P1 Mid demo, subject to final owner UAT
-confirmation of the corrected search issue**. All 15 automated feature checks
+Recommendation: **READY for the local P1 Mid demo**. The owner confirmed the
+corrected TSLA/AVGO search and selection, closing the remaining UAT item. All 15 automated feature checks
 pass and the documented prototype limitations have owner acceptance. Release
 readiness is **WAITING_FOR_OWNER_APPROVAL** for push/deployment safety: Vercel
 settings remain unknown and pushes/deployments are prohibited. Remote CI for
@@ -275,3 +277,7 @@ The four owner-supplied Proposal/requirements originals remain unchanged and
 untracked. No ignored environment files or recorded private mail are included.
 PR #3 is not updated remotely because the owner prohibits pushing until Vercel
 configuration is verified. Existing remote CI does not validate these local commits.
+
+Owner acceptance update (27 October 2026): documentation-only confirmation; no
+application code, credentials or deployment settings changed. Prior code checks
+remain applicable. Documentation whitespace and staged secret-policy checks passed.
