@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { money, quantity, validDecimal, validateEmail, validatePassword } from './format';
+import { marketDate, money, quantity, validDecimal, validateEmail, validatePassword } from './format';
 
 describe('financial display and form validation', () => {
+  it('preserves the provider trading date instead of shifting midnight into the previous local day', () => {
+    expect(marketDate('2026-10-26T00:00:00.000Z')).toBe('Oct 26, 2026');
+    expect(marketDate('2026-01-01T00:00:00.000Z')).toBe('Jan 1, 2026');
+    expect(marketDate(null)).toBe('Not available');
+    expect(marketDate('invalid')).toBe('Not available');
+  });
   it('distinguishes a missing quote from an actual zero quote', () => {
     expect(money(null)).toBe('Not available'); expect(money(undefined)).toBe('Not available'); expect(money('0')).toBe('$0.00');
   });

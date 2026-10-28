@@ -12,6 +12,7 @@
                     "test:db":  "tsx --test --test-concurrency=1 test/integration/*.test.ts",
                     "db:migrate":  "tsx src/db/migrate.ts",
                     "db:seed":  "tsx src/db/seed.ts",
+                    "db:market:refresh": "tsx src/db/refresh-market.ts",
                     "db:admin":  "tsx src/db/set-admin.ts"
                 },
     "dependencies":  {
@@ -23,7 +24,7 @@
                          "google-auth-library":  "11.2.0",
                          "helmet":  "8.3.0",
                          "pg":  "8.23.1",
-                         "zod":  "4.6.5"
+                         "zod":  "4.6.7"
                      },
     "devDependencies":  {
                             "@types/cookie-parser":  "1.4.10",

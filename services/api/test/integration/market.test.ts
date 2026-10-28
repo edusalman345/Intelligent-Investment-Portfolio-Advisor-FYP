@@ -7,7 +7,8 @@ import { createApp } from '../../src/app.js';
 import { tokenHash } from '../../src/auth-context.js';
 import { HttpError } from '../../src/errors.js';
 import { DEMO_ASSETS } from '../../src/market.js';
-import { alphaVantageProvider, type MarketAsset, type MarketBatch, type MarketProvider } from '../../src/market-provider.js';
+import { ALPHA_VANTAGE_SOURCE, alphaVantageProvider, type MarketAsset, type MarketBatch, type MarketProvider } from '../../src/market-provider.js';
+import { saveValuation, valuePortfolio } from '../../src/valuation.js';
 import { createTestPool, resetDatabase, testConfig } from './helpers.js';
 
 const config = testConfig();
@@ -296,4 +297,163 @@ test('free provider cooldown and rolling budget count failed attempts before per
   assert.equal(provider.calls.length, 2);
   const attempts = await pool.query(`SELECT count(*)::int AS total FROM ingestion_runs r JOIN data_sources s ON s.id=r.source_id WHERE s.name=$1`, [provider.name]);
   assert.equal(attempts.rows[0].total, 12);
+});
+
+async function addRealCache(price = '222.12345678', ageHours = 100) {
+  const source = await pool.query(`INSERT INTO data_sources(name,source_type,config)
+    VALUES($1,'MARKET','{"isDemo":false,"frequency":"end-of-day","adjusted":false}') RETURNING id`, [ALPHA_VANTAGE_SOURCE]);
+  const asOf = hoursAgo(ageHours);
+  await pool.query('INSERT INTO market_quotes(asset_id,source_id,price,currency,as_of) VALUES($1,$2,$3,\'USD\',$4)', [assetId, source.rows[0].id, price, asOf]);
+  await pool.query(`INSERT INTO market_price_bars(asset_id,source_id,bar_time,open,high,low,close)
+    VALUES($1,$2,$3,220,225,219,$4)`, [assetId, source.rows[0].id, asOf, price]);
+  return { sourceId: source.rows[0].id as string, asOf };
+}
+
+test('real mode selects its exact real source despite newer synthetic or unrelated real records, without fetching', async () => {
+  const investor = await session('INVESTOR'); const real = await addRealCache();
+  const unrelated = await pool.query(`INSERT INTO data_sources(name,source_type,config) VALUES('Unapproved real source','MARKET','{"isDemo":false}') RETURNING id`);
+  await pool.query(`INSERT INTO market_quotes(asset_id,source_id,price,currency,as_of) VALUES($1,$2,999,'USD',NOW()-INTERVAL '1 second')`, [assetId, unrelated.rows[0].id]);
+  await pool.query(`INSERT INTO market_price_bars(asset_id,source_id,bar_time,open,high,low,close) VALUES($1,$2,NOW()-INTERVAL '1 second',990,1000,980,999)`, [assetId, unrelated.rows[0].id]);
+  const fixtureQuote = await readQuote(investor); assert.equal(fixtureQuote.isDemo, true);
+  const fixtureHistory = await request(app).get(`/api/v1/assets/${assetId}/history`).set('Cookie', investor.cookie);
+  assert.ok(fixtureHistory.body.data.every((item: { isDemo: boolean }) => item.isDemo));
+  app = createApp({ pool, config: { ...config, marketProvider: 'alpha-vantage' }, marketProvider: provider });
+  const cached = await readQuote(investor);
+  assert.equal(cached.price, '222.12345678'); assert.equal(cached.source, ALPHA_VANTAGE_SOURCE); assert.equal(cached.asOf, real.asOf);
+  assert.equal(cached.isDemo, false); assert.equal(cached.isStale, true);
+  const history = await request(app).get(`/api/v1/assets/${assetId}/history`).set('Cookie', investor.cookie);
+  assert.equal(history.body.data.length, 1); assert.equal(history.body.data[0].source, ALPHA_VANTAGE_SOURCE); assert.equal(history.body.data[0].isDemo, false);
+  const economic = await request(app).get('/api/v1/market/economic').set('Cookie', investor.cookie);
+  assert.deepEqual(economic.body.data, []);
+  assert.deepEqual(provider.calls, []);
+});
+
+test('real mode returns unavailable quote/history and unpriced valuation when only synthetic data exists', async () => {
+  const investor = await session('INVESTOR');
+  app = createApp({ pool, config: { ...config, marketProvider: 'alpha-vantage' }, marketProvider: provider });
+  assert.equal(await readQuote(investor), null);
+  const history = await request(app).get(`/api/v1/assets/${assetId}/history`).set('Cookie', investor.cookie);
+  assert.deepEqual(history.body.data, []);
+  const user = await pool.query(`SELECT id FROM users LIMIT 1`);
+  const portfolio = await pool.query(`INSERT INTO portfolios(user_id,name) VALUES($1,'Real-mode valuation') RETURNING id`, [user.rows[0].id]);
+  const id = portfolio.rows[0].id as string;
+  await pool.query(`INSERT INTO transactions(portfolio_id,asset_id,transaction_type,quantity,price,currency,fees,occurred_at,idempotency_key,request_fingerprint)
+    VALUES($1,$2,'BUY',2,100,'USD',0,NOW()-INTERVAL '1 day',gen_random_uuid(),'test')`, [id, assetId]);
+  const missing = await valuePortfolio(pool, id, config.quoteMaxAgeHours, new Date(), 'alpha-vantage');
+  assert.equal(missing.unpricedPositionCount, 1); assert.equal(missing.totalValue, '0.00000000'); assert.equal(missing.isDemo, false);
+  assert.equal(missing.positions[0]!.price, null); assert.equal(missing.positions[0]!.source, null);
+  const fixture = await valuePortfolio(pool, id, config.quoteMaxAgeHours, new Date(), 'fixture');
+  assert.equal(fixture.unpricedPositionCount, 0); assert.equal(fixture.isDemo, true);
+  const real = await addRealCache();
+  const realValue = await saveValuation(pool, id, config.quoteMaxAgeHours, 'alpha-vantage');
+  assert.equal(realValue.marketProvider, 'alpha-vantage'); assert.equal(realValue.totalMarketValue, '444.24691356');
+  assert.equal(realValue.stalePositionCount, 1); assert.equal(realValue.isDemo, false); assert.equal(realValue.positions[0]!.asOf, real.asOf);
+  const saved = await pool.query('SELECT details FROM portfolio_valuation_snapshots WHERE portfolio_id=$1', [id]);
+  assert.equal(saved.rows[0].details.marketProvider, 'alpha-vantage'); assert.equal(saved.rows[0].details.positions[0].source, ALPHA_VANTAGE_SOURCE);
+});
+
+test('portfolio valuation history isolates real and fixture snapshots and retains untagged legacy snapshots only in fixture mode', async () => {
+  const investor = await session('INVESTOR');
+  const user = await pool.query('SELECT id FROM users LIMIT 1');
+  const portfolio = await pool.query(`INSERT INTO portfolios(user_id,name) VALUES($1,'Mixed snapshot history') RETURNING id`, [user.rows[0].id]);
+  const id = portfolio.rows[0].id as string;
+  const path = `/api/v1/portfolios/${id}/valuation/history`;
+  const expected = new Map<string, string>();
+  for (const [label, providerMode, ageHours] of [
+    ['real', 'alpha-vantage', 3], ['fixture', 'fixture', 2], ['legacy', undefined, 1],
+  ] as const) {
+    const asOf = hoursAgo(ageHours);
+    const details = { asOf, baseCurrency: 'USD', totalMarketValue: '0.00000000', cashValue: '0.00000000', totalValue: '0.00000000',
+      unpricedPositionCount: 0, stalePositionCount: 0, isDemo: providerMode === 'fixture', positions: [],
+      ...(providerMode ? { marketProvider: providerMode } : {}) };
+    const snapshot = await pool.query(`INSERT INTO portfolio_valuation_snapshots(portfolio_id,as_of,total_market_value,cash_value,unpriced_position_count,base_currency,details)
+      VALUES($1,$2,0,0,0,'USD',$3) RETURNING id`, [id, asOf, JSON.stringify(details)]);
+    expected.set(label, snapshot.rows[0].id);
+  }
+  app = createApp({ pool, config: { ...config, marketProvider: 'alpha-vantage' }, marketProvider: provider });
+  const real = await request(app).get(path).set('Cookie', investor.cookie);
+  assert.equal(real.status, 200); assert.deepEqual(real.body.data.map((snapshot: { id: string }) => snapshot.id), [expected.get('real')]);
+  assert.equal(real.body.data[0].marketProvider, 'alpha-vantage');
+  const realLimited = await request(app).get(path).query({ limit: 1 }).set('Cookie', investor.cookie);
+  assert.deepEqual(realLimited.body.data.map((snapshot: { id: string }) => snapshot.id), [expected.get('real')]);
+  const realCurrent = await request(app).get(`/api/v1/portfolios/${id}/valuation`).set('Cookie', investor.cookie);
+  assert.equal(realCurrent.status, 200); assert.equal(realCurrent.body.data.marketProvider, 'alpha-vantage');
+  app = createApp({ pool, config, marketProvider: provider });
+  const fixture = await request(app).get(path).set('Cookie', investor.cookie);
+  assert.equal(fixture.status, 200); assert.deepEqual(fixture.body.data.map((snapshot: { id: string }) => snapshot.id), [expected.get('fixture'), expected.get('legacy')]);
+  assert.equal(fixture.body.data[0].marketProvider, 'fixture');
+  assert.equal(Object.hasOwn(fixture.body.data[1], 'marketProvider'), false);
+  const fixtureLimited = await request(app).get(path).query({ limit: 1 }).set('Cookie', investor.cookie);
+  assert.deepEqual(fixtureLimited.body.data.map((snapshot: { id: string }) => snapshot.id), [expected.get('legacy')]);
+  assert.deepEqual(provider.calls, []);
+});
+
+test('real provider quota failures are sanitized, not retried and preserve real cached data without synthetic fallback', async () => {
+  const admin = await session(); await addRealCache();
+  let requests = 0;
+  const realProvider = alphaVantageProvider({ ...config, alphaVantageApiKey: 'non-secret-test-placeholder' },
+    (async () => { requests++; return Response.json({ Information: 'API rate limit reached: provider-secret-sentinel' }); }) as typeof fetch,
+    { sleep: async () => { throw new Error('Quota responses must not retry.'); } });
+  app = createApp({ pool, config: { ...config, marketProvider: 'alpha-vantage' }, marketProvider: realProvider });
+  const before = await readQuote(admin);
+  const failed = await refresh(admin);
+  assert.equal(failed.status, 429); assert.equal(failed.body.error.code, 'MARKET_PROVIDER_QUOTA'); assert.equal(requests, 1);
+  assert.equal(JSON.stringify(failed.body).includes('provider-secret-sentinel'), false);
+  assert.deepEqual(await readQuote(admin), before);
+  const internal = await pool.query(`SELECT status,error_summary FROM ingestion_runs WHERE job_type='PROVIDER_REQUEST'`);
+  assert.equal(internal.rowCount, 1); assert.equal(internal.rows[0].status, 'FAILED');
+  const publicRuns = await request(app).get('/api/v1/market/runs').set('Cookie', admin.cookie);
+  const exactRealRuns = publicRuns.body.data.filter((run: { source: string }) => run.source === ALPHA_VANTAGE_SOURCE);
+  assert.equal(exactRealRuns.length, 1); assert.equal(exactRealRuns[0].status, 'FAILED');
+  const summary = await pool.query(`SELECT error_summary FROM ingestion_runs WHERE job_type='ASSET_REFRESH' AND source_id=(SELECT id FROM data_sources WHERE name=$1)`, [ALPHA_VANTAGE_SOURCE]);
+  assert.match(summary.rows[0].error_summary, /QUOTA/); assert.equal(summary.rows[0].error_summary.includes('provider-secret-sentinel'), false);
+});
+
+test('per-second provider notices are identified as frequency failures without retrying or reporting daily quota exhaustion', async () => {
+  const admin = await session(); await addRealCache(); let requests = 0;
+  const realProvider = alphaVantageProvider({ ...config, alphaVantageApiKey: 'non-secret-test-placeholder' },
+    (async () => {
+      requests++;
+      return Response.json({ Information: 'Please consider spreading out your free API requests more sparingly (1 request per second). Lift the free key rate limit (25 requests per day). provider-secret-sentinel' });
+    }) as typeof fetch, { sleep: async () => { throw new Error('Frequency responses must not retry.'); } });
+  app = createApp({ pool, config: { ...config, marketProvider: 'alpha-vantage' }, marketProvider: realProvider });
+  const cached = await readQuote(admin);
+  const failed = await refresh(admin);
+  assert.equal(failed.status, 429); assert.equal(failed.body.error.code, 'MARKET_PROVIDER_FREQUENCY'); assert.equal(requests, 1);
+  assert.match(failed.body.error.message, /short-term request burst/); assert.equal(JSON.stringify(failed.body).includes('provider-secret-sentinel'), false);
+  assert.deepEqual(await readQuote(admin), cached);
+  const summary = await pool.query(`SELECT error_summary FROM ingestion_runs WHERE job_type='ASSET_REFRESH' AND source_id=(SELECT id FROM data_sources WHERE name=$1)`, [ALPHA_VANTAGE_SOURCE]);
+  assert.match(summary.rows[0].error_summary, /FREQUENCY/); assert.equal(summary.rows[0].error_summary.includes('QUOTA'), false);
+});
+
+test('real retry attempts reserve durable request budget and internal attempts do not alter public refresh diagnostics', async () => {
+  const admin = await session();
+  let attempts = 0; let clock = 0; const requestTimes: number[] = [];
+  const realProvider = alphaVantageProvider({ ...config, alphaVantageApiKey: 'non-secret-test-placeholder' },
+    (async (input: URL | string | Request) => {
+      attempts++; requestTimes.push(clock);
+      if (attempts === 1) return new Response('temporary outage', { status: 503 });
+      const daily = new URL(String(input)).searchParams.get('function') === 'TIME_SERIES_DAILY';
+      return Response.json(daily
+        ? { 'Meta Data': { '2. Symbol': 'AAPL' }, 'Time Series (Daily)': {
+          '2025-01-03': { '1. open': '101', '2. high': '103', '3. low': '100', '4. close': '102' },
+          '2025-01-02': { '1. open': '100', '2. high': '101', '3. low': '99', '4. close': '100.5' },
+        } }
+        : { 'Global Quote': { '01. symbol': 'AAPL', '05. price': '100.5', '07. latest trading day': '2025-01-02' } });
+    }) as typeof fetch, { now: () => clock, sleep: async milliseconds => { clock += milliseconds; } });
+  app = createApp({ pool, config: { ...config, marketProvider: 'alpha-vantage' }, marketProvider: realProvider });
+  const refreshed = await refresh(admin); assert.equal(refreshed.status, 200); assert.equal(attempts, 3);
+  assert.deepEqual(requestTimes, [0, 1100, 2200]);
+  const orderIssues = await pool.query(`SELECT id FROM data_quality_issues WHERE ingestion_run_id=$1 AND issue_code='OUT_OF_ORDER'`, [refreshed.body.data.id]);
+  assert.equal(orderIssues.rowCount, 0);
+  const requests = await pool.query(`SELECT status FROM ingestion_runs WHERE job_type='PROVIDER_REQUEST' ORDER BY started_at,id`);
+  assert.deepEqual(requests.rows.map(row => row.status), ['FAILED', 'COMPLETED', 'COMPLETED']);
+  const status = await request(app).get('/api/v1/market/status').set('Cookie', admin.cookie);
+  assert.equal(status.body.data.lastRun.id, refreshed.body.data.id);
+  const cooldown = await refresh(admin); assert.equal(cooldown.status, 429); assert.equal(attempts, 3);
+  await pool.query(`UPDATE ingestion_runs SET started_at=NOW()-INTERVAL '2 minutes' WHERE source_id=(SELECT id FROM data_sources WHERE name=$1)`, [ALPHA_VANTAGE_SOURCE]);
+  await pool.query(`INSERT INTO ingestion_runs(source_id,job_type,status,started_at,finished_at)
+    SELECT id,'PROVIDER_REQUEST','FAILED',NOW()-INTERVAL '3 minutes',NOW()-INTERVAL '3 minutes' FROM data_sources CROSS JOIN generate_series(1,21) WHERE name=$1`, [ALPHA_VANTAGE_SOURCE]);
+  const exhausted = await refresh(admin); assert.equal(exhausted.status, 429); assert.equal(exhausted.body.error.code, 'MARKET_REQUEST_BUDGET'); assert.equal(attempts, 3);
+  const count = await pool.query(`SELECT count(*)::int AS total FROM ingestion_runs WHERE job_type='PROVIDER_REQUEST'`); assert.equal(count.rows[0].total, 24);
 });

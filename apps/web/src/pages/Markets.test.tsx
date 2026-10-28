@@ -24,6 +24,17 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.resetAllMocks(); });
 
 describe('market administration', () => {
+  it('labels real-provider prices as end-of-day and never presents the synthetic-mode banner', async () => {
+    auth.session.user.role = 'INVESTOR';
+    vi.mocked(api.get).mockImplementation(async <T,>(path: string): Promise<T> => {
+      return (path === 'assets' ? assets : path === 'market/status'
+        ? { provider: 'Alpha Vantage free daily data', configured: true, isDemo: false } : []) as T;
+    });
+    render(<MemoryRouter><MarketsPage/></MemoryRouter>);
+    expect(await screen.findByText('End-of-day market data.')).toBeVisible();
+    expect(screen.getByText(/They are not real-time or intraday prices/)).toBeVisible();
+    expect(screen.queryByText('Demo market data.')).not.toBeInTheDocument();
+  });
   it('reloads visible quote and history after refreshing the selected asset without navigation',async()=> {
     let refreshed=false;
     vi.mocked(api.get).mockImplementation(async<T,>(path:string):Promise<T>=> {
@@ -71,4 +82,55 @@ describe('market administration', () => {
     expect(screen.queryByRole('button', { name: 'Refresh data' })).not.toBeInTheDocument();
     expect(api.get).not.toHaveBeenCalledWith('market/runs');
   });
+});
+
+
+describe('dynamic discovery', () => {
+  for (const symbol of ['TSLA', 'AVGO']) {
+    it(`discovers ${symbol}, loads its real cache and opens the asset`, async () => {
+      auth.session.user.role = 'INVESTOR';
+      const discovered = { ...assets[0]!, id: '20000000-0000-4000-8000-000000000001', symbol, name: `${symbol} company`, exchange: 'US' };
+      vi.mocked(api.get).mockImplementation(async <T,>(path: string): Promise<T> => {
+        return (path === 'assets' ? assets : path.startsWith('assets?q=') ? assets : path === 'market/status'
+          ? { provider: 'Alpha Vantage free daily data', configured: true, isDemo: false }
+          : path === `assets/${discovered.id}` ? discovered : path.endsWith('/quote') ? null : []) as T;
+      });
+      vi.mocked(api.post).mockImplementation(async <T,>(path: string): Promise<T> => (path === 'assets/discover' ? [discovered] : { cacheUsed: true, run: null }) as T);
+      render(<MemoryRouter initialEntries={['/markets']}><Routes><Route path='/markets' element={<MarketsPage/>}/><Route path='/markets/:id' element={<MarketsPage/>}/></Routes></MemoryRouter>);
+      await screen.findByText('Apple Inc.');
+      fireEvent.change(screen.getByLabelText('Search assets'), { target: { value: symbol } });
+      fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+      fireEvent.click(await screen.findByRole('link', { name: new RegExp(`${symbol} company`) }));
+      await waitFor(() => expect(api.post).toHaveBeenCalledWith(`assets/${discovered.id}/market-data`));
+      expect(api.post).toHaveBeenCalledWith('assets/discover', { query: symbol });
+      expect(await screen.findByRole('heading', { name: `${symbol} company` })).toBeVisible();
+    });
+  }
+  it('reports quota failure as an error rather than claiming no matching stocks', async () => {
+    auth.session.user.role = 'INVESTOR';
+    vi.mocked(api.get).mockImplementation(async <T,>(path: string): Promise<T> => (path === 'assets' ? assets : path === 'market/status' ? { isDemo: false } : []) as T);
+    vi.mocked(api.post).mockRejectedValue(new Error('Provider quota reached; cached data remains available.'));
+    render(<MemoryRouter><MarketsPage/></MemoryRouter>);
+    await screen.findByText('Apple Inc.');
+    fireEvent.change(screen.getByLabelText('Search assets'), { target: { value: 'TSLA' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Provider quota reached');
+    expect(screen.queryByText('No matching assets')).not.toBeInTheDocument();
+  });
+});
+
+
+it('offers direct-route loading and reports HTTP-successful quality failure with retry', async () => {
+  auth.session.user.role = 'INVESTOR';
+  const asset = { ...assets[0]!, symbol: 'TSLA', name: 'Tesla' };
+  vi.mocked(api.get).mockImplementation(async <T,>(path: string): Promise<T> => (path === 'assets' ? [asset] : path === 'market/status' ? { isDemo: false }
+    : path === `assets/${asset.id}` ? asset : path.endsWith('/quote') ? null : []) as T);
+  vi.mocked(api.post).mockResolvedValue({ cacheUsed: false, run: { status: 'FAILED' } });
+  render(<MemoryRouter initialEntries={[`/markets/${asset.id}`]}><Routes><Route path='/markets/:id' element={<MarketsPage/>}/></Routes></MemoryRouter>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Load real market data' }));
+  expect(await screen.findByText(/Market data did not pass quality validation/)).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Retry market data' })).toBeVisible();
+  vi.mocked(api.post).mockResolvedValue({ cacheUsed: true, run: null });
+  fireEvent.click(screen.getByRole('button', { name: 'Retry market data' }));
+  await waitFor(() => expect(screen.queryByText(/Market data did not pass quality validation/)).not.toBeInTheDocument());
 });

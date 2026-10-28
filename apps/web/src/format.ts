@@ -21,6 +21,11 @@ export function dateTime(value: string | null | undefined): string {
 export function shortDate(value: string): string {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(value));
 }
+/** Daily market timestamps encode a trading date, not a local intraday instant. */
+export function marketDate(value: string | null | undefined): string {
+  if (!value || Number.isNaN(Date.parse(value))) return 'Not available';
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(value));
+}
 export function validDecimal(value: string, allowZero = false): boolean {
   return /^(?:0|[1-9]\d{0,17})(?:\.\d{1,8})?$/.test(value) && (allowZero || /[1-9]/.test(value));
 }

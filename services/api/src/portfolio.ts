@@ -67,7 +67,7 @@ async function priorRequest(db: DB, portfolioId: string, key: string, fingerprin
   return oneTransaction(db, portfolioId, prior.rows[0].id);
 }
 function fingerprint(value: unknown): string { return createHash('sha256').update(JSON.stringify(value)).digest('hex'); }
-async function updateDerived(client: DB, portfolioId: string, userId: string, quoteMaxAgeHours: number): Promise<void> {
+async function updateDerived(client: DB, portfolioId: string, userId: string, quoteMaxAgeHours: number, marketProvider: AppConfig['marketProvider']): Promise<void> {
   const { positions } = replayLedger(await ledgerEntries(client, portfolioId));
   // Holdings are a materialized view of the append-only transaction ledger.
   await client.query('DELETE FROM holdings WHERE portfolio_id = $1', [portfolioId]);
@@ -78,7 +78,7 @@ async function updateDerived(client: DB, portfolioId: string, userId: string, qu
     await client.query(`INSERT INTO holdings(portfolio_id, asset_id, quantity, average_cost, cost_currency)
       VALUES($1,$2,$3,$4,'USD')`, [portfolioId, assetId, position.quantity.toFixed(8), averageCost.toFixed(8)]);
   }
-  await saveValuation(client, portfolioId, quoteMaxAgeHours);
+  await saveValuation(client, portfolioId, quoteMaxAgeHours, marketProvider);
   await client.query('UPDATE portfolios SET updated_at = NOW() WHERE id = $1 AND user_id = $2', [portfolioId, userId]);
 }
 
@@ -110,7 +110,7 @@ export function createPortfolioRouter({ pool, config }: { pool: Pool; config: Ap
       const value = await atomic(pool, async client => {
         const created = await client.query(`INSERT INTO portfolios(user_id, name, description, base_currency) VALUES($1,$2,$3,$4) RETURNING ${portfolioSelect}`,
           [request.auth!.user.id, input.name, input.description || null, input.baseCurrency]);
-        await saveValuation(client, created.rows[0].id, config.quoteMaxAgeHours);
+        await saveValuation(client, created.rows[0].id, config.quoteMaxAgeHours, config.marketProvider);
         await audit(client, request.auth!.user.id, 'PORTFOLIO_CREATE', 'portfolio', created.rows[0].id); return created.rows[0];
       }); response.status(201).json({ data: value });
     } catch (error) { uniqueConflict(error, 'PORTFOLIO_NAME_IN_USE', 'An active portfolio with that name already exists.'); }
@@ -170,7 +170,7 @@ export function createPortfolioRouter({ pool, config }: { pool: Pool; config: Ap
       const inserted = await client.query(`INSERT INTO transactions(portfolio_id, asset_id, transaction_type, quantity, price, amount, currency, fees, occurred_at, notes, idempotency_key, request_fingerprint)
         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
       [id, normalized.assetId, normalized.type, normalized.quantity, normalized.price, normalized.amount, normalized.currency, normalized.fees, normalized.occurredAt, normalized.notes, input.idempotencyKey, hash]);
-      await updateDerived(client, id, request.auth!.user.id, config.quoteMaxAgeHours);
+      await updateDerived(client, id, request.auth!.user.id, config.quoteMaxAgeHours, config.marketProvider);
       await audit(client, request.auth!.user.id, 'TRANSACTION_CREATE', 'transaction', inserted.rows[0].id);
       return { value: await oneTransaction(client, id, inserted.rows[0].id), created: true };
     }); response.status(result.created ? 201 : 200).json({ data: result.value });
@@ -190,19 +190,21 @@ export function createPortfolioRouter({ pool, config }: { pool: Pool; config: Ap
       if (date.getTime() < new Date(target.occurredAt).getTime()) throw new HttpError(400, 'REVERSAL_DATE_INVALID', 'A reversal cannot occur before its original transaction.');
       const inserted = await client.query(`INSERT INTO transactions(portfolio_id, transaction_type, currency, fees, occurred_at, notes, idempotency_key, request_fingerprint, reverses_transaction_id)
         VALUES($1,'REVERSAL','USD',0,$2,$3,$4,$5,$6) RETURNING id`, [id, date, input.notes || null, input.idempotencyKey, hash, targetId]);
-      await updateDerived(client, id, request.auth!.user.id, config.quoteMaxAgeHours);
+      await updateDerived(client, id, request.auth!.user.id, config.quoteMaxAgeHours, config.marketProvider);
       await audit(client, request.auth!.user.id, 'TRANSACTION_REVERSE', 'transaction', inserted.rows[0].id);
       return { value: await oneTransaction(client, id, inserted.rows[0].id), created: true };
     }); response.status(result.created ? 201 : 200).json({ data: result.value });
   });
   router.get('/portfolios/:id/valuation', async (request, response) => {
     const id = parse(uuid, request.params.id); await ownPortfolio(pool, id, request.auth!.user.id);
-    response.json({ data: await valuePortfolio(pool, id, config.quoteMaxAgeHours) });
+    response.json({ data: await valuePortfolio(pool, id, config.quoteMaxAgeHours, new Date(), config.marketProvider) });
   });
   router.get('/portfolios/:id/valuation/history', async (request, response) => {
     const id = parse(uuid, request.params.id); await ownPortfolio(pool, id, request.auth!.user.id);
     const query = parse(z.object({ limit: z.coerce.number().int().min(1).max(500).default(200) }).strict(), request.query);
-    const result = await pool.query(`SELECT id, details FROM (SELECT id, details, as_of FROM portfolio_valuation_snapshots WHERE portfolio_id = $1 ORDER BY as_of DESC LIMIT $2) recent ORDER BY as_of`, [id, query.limit]);
+    const result = await pool.query(`SELECT id, details FROM (SELECT id, details, as_of FROM portfolio_valuation_snapshots
+      WHERE portfolio_id = $1 AND (details->>'marketProvider'=$3 OR ($3='fixture' AND NOT details ? 'marketProvider'))
+      ORDER BY as_of DESC LIMIT $2) recent ORDER BY as_of`, [id, query.limit, config.marketProvider]);
     response.json({ data: result.rows.map(row => ({ id: row.id, ...row.details })) });
   });
 

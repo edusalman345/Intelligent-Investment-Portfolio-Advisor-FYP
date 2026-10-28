@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 import { fileURLToPath } from 'node:url';
 const envFile = fileURLToPath(new URL('../../../.env', import.meta.url));
-if (existsSync(envFile)) loadEnvFile(envFile);
+if (process.env.NODE_ENV !== 'test' && !process.env.NODE_TEST_CONTEXT && existsSync(envFile)) loadEnvFile(envFile);
 
 export interface AppConfig {
   nodeEnv: string; port: number; host: string; databaseUrl: string; frontendOrigin: string;

@@ -25,6 +25,7 @@ async function captureMobile(page: Page, testInfo: TestInfo, name: string) {
 }
 
 test('P1 user registers, records fractional holdings, views provenance and signs in again',async({page},testInfo)=> {
+  test.skip(process.env.E2E_REAL_MARKET === '1', 'The real-provider journey runs separately.');
   test.setTimeout(120000);
   const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto('/portfolios');
