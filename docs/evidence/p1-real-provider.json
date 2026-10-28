@@ -1,0 +1,179 @@
+{
+  "verifiedDate": "2026-10-27",
+  "provider": "Alpha Vantage",
+  "frequency": "end-of-day",
+  "adjusted": false,
+  "sourceIsolation": "alpha-vantage mode excludes synthetic sources",
+  "successfulImports": [
+    {
+      "symbol": "AAPL",
+      "provider": "Alpha Vantage free daily data",
+      "isDemo": false,
+      "frequency": "end-of-day",
+      "adjusted": false,
+      "fetchedAt": "2026-10-27T20:18:05.901Z",
+      "completedAt": "2026-10-27T20:18:08.467Z",
+      "runId": "0cd8f9b2-2d4d-42ed-90bd-a6e1ce59892e",
+      "status": "COMPLETED",
+      "recordsReceived": 101,
+      "recordsWritten": 101,
+      "issueCount": 99,
+      "quoteAsOf": "2026-10-27T00:00:00.000Z",
+      "firstBar": "2026-06-05T00:00:00.000Z",
+      "lastBar": "2026-10-27T00:00:00.000Z",
+      "bars": 100,
+      "volumePresent": true
+    },
+    {
+      "symbol": "MSFT",
+      "provider": "Alpha Vantage free daily data",
+      "isDemo": false,
+      "frequency": "end-of-day",
+      "adjusted": false,
+      "fetchedAt": "2026-10-27T20:19:13.858Z",
+      "completedAt": "2026-10-27T20:19:16.594Z",
+      "runId": "c817ecd9-b5f2-4643-812f-152e87c78d5b",
+      "status": "COMPLETED",
+      "recordsReceived": 101,
+      "recordsWritten": 101,
+      "issueCount": 0,
+      "quoteAsOf": "2026-10-27T00:00:00.000Z",
+      "firstBar": "2026-06-05T00:00:00.000Z",
+      "lastBar": "2026-10-27T00:00:00.000Z",
+      "bars": 100,
+      "volumePresent": true
+    },
+    {
+      "symbol": "NVDA",
+      "provider": "Alpha Vantage free daily data",
+      "isDemo": false,
+      "frequency": "end-of-day",
+      "adjusted": false,
+      "fetchedAt": "2026-10-27T20:20:35.982Z",
+      "completedAt": "2026-10-27T20:20:38.571Z",
+      "runId": "36c0076d-7a91-43db-a858-b113039dcea6",
+      "status": "COMPLETED",
+      "recordsReceived": 101,
+      "recordsWritten": 101,
+      "issueCount": 0,
+      "quoteAsOf": "2026-10-27T00:00:00.000Z",
+      "firstBar": "2026-06-05T00:00:00.000Z",
+      "lastBar": "2026-10-27T00:00:00.000Z",
+      "bars": 100,
+      "volumePresent": true
+    },
+    {
+      "symbol": "TSLA",
+      "provider": "Alpha Vantage free daily data",
+      "isDemo": false,
+      "frequency": "end-of-day",
+      "adjusted": false,
+      "fetchedAt": "2026-10-28T01:05:01.966Z",
+      "completedAt": "2026-10-28T01:05:05.004Z",
+      "runId": "8d84d3dd-b058-44b3-87e6-972af4baa3d9",
+      "status": "COMPLETED",
+      "recordsReceived": 101,
+      "recordsWritten": 101,
+      "issueCount": 0,
+      "assets": 1,
+      "quotes": 1,
+      "bars": 100,
+      "firstBar": "2026-06-05T00:00:00.000Z",
+      "lastBar": "2026-10-27T00:00:00.000Z",
+      "quoteAsOf": "2026-10-27T00:00:00.000Z",
+      "volumePresent": true
+    },
+    {
+      "symbol": "AVGO",
+      "provider": "Alpha Vantage free daily data",
+      "isDemo": false,
+      "frequency": "end-of-day",
+      "adjusted": false,
+      "fetchedAt": "2026-10-28T01:06:44.201Z",
+      "completedAt": "2026-10-28T01:06:47.254Z",
+      "runId": "397b71f5-fa38-4874-8fab-bceb13b554ef",
+      "status": "COMPLETED",
+      "recordsReceived": 101,
+      "recordsWritten": 101,
+      "issueCount": 0,
+      "assets": 1,
+      "quotes": 1,
+      "bars": 100,
+      "firstBar": "2026-06-05T00:00:00.000Z",
+      "lastBar": "2026-10-27T00:00:00.000Z",
+      "quoteAsOf": "2026-10-27T00:00:00.000Z",
+      "volumePresent": true
+    }
+  ],
+  "persistedCounts": [
+    {
+      "symbol": "AAPL",
+      "real_quotes": 1,
+      "real_bars": 100
+    },
+    {
+      "symbol": "MSFT",
+      "real_quotes": 1,
+      "real_bars": 100
+    },
+    {
+      "symbol": "NVDA",
+      "real_quotes": 1,
+      "real_bars": 100
+    }
+  ],
+  "initialAaplOrderWarnings": "First import recorded 99 reverse-order warnings; chronological normalization is now covered by regression tests. All imported values passed validation.",
+  "latestPersistenceVerification": "2026-10-28T01:09:13.936Z",
+  "persistence": [
+    {
+      "symbol": "AAPL",
+      "assets": 1,
+      "quotes": 1,
+      "bars": 100,
+      "firstBar": "2026-06-05T00:00:00.000Z",
+      "lastBar": "2026-10-27T00:00:00.000Z",
+      "quoteAsOf": "2026-10-27T00:00:00.000Z",
+      "volumePresent": true
+    },
+    {
+      "symbol": "AVGO",
+      "assets": 1,
+      "quotes": 1,
+      "bars": 100,
+      "firstBar": "2026-06-05T00:00:00.000Z",
+      "lastBar": "2026-10-27T00:00:00.000Z",
+      "quoteAsOf": "2026-10-27T00:00:00.000Z",
+      "volumePresent": true
+    },
+    {
+      "symbol": "MSFT",
+      "assets": 1,
+      "quotes": 1,
+      "bars": 100,
+      "firstBar": "2026-06-05T00:00:00.000Z",
+      "lastBar": "2026-10-27T00:00:00.000Z",
+      "quoteAsOf": "2026-10-27T00:00:00.000Z",
+      "volumePresent": true
+    },
+    {
+      "symbol": "NVDA",
+      "assets": 1,
+      "quotes": 1,
+      "bars": 100,
+      "firstBar": "2026-06-05T00:00:00.000Z",
+      "lastBar": "2026-10-27T00:00:00.000Z",
+      "quoteAsOf": "2026-10-27T00:00:00.000Z",
+      "volumePresent": true
+    },
+    {
+      "symbol": "TSLA",
+      "assets": 1,
+      "quotes": 1,
+      "bars": 100,
+      "firstBar": "2026-06-05T00:00:00.000Z",
+      "lastBar": "2026-10-27T00:00:00.000Z",
+      "quoteAsOf": "2026-10-27T00:00:00.000Z",
+      "volumePresent": true
+    }
+  ]
+}

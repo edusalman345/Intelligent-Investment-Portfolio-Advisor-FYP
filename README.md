@@ -12,9 +12,14 @@ observation dates and freshness. No external credentials are needed for this dem
 
 ## Native Windows setup
 
-Use Git, Node **26.8.1** with npm **12.2.0**, Python **3.13** for analytics/checks,
+Use Git, Node **24.x** with its bundled npm, Python **3.13** for analytics/checks,
 and PostgreSQL **18** (development validated with 18.6). Install these tools yourself
 if absent. Docker, AWS and deployment setup are deferred.
+
+The root package and lockfile require Node 24, and application CI uses Node 24 on
+Windows and Linux. Check `node --version` before installing dependencies; use a
+current Node 24 release rather than relying on another major version already on
+your PATH.
 
 From this repository root:
 
@@ -83,7 +88,36 @@ The optional Alpha Vantage adapter uses `GLOBAL_QUOTE` and compact
 `TIME_SERIES_DAILY`. It does not promise real-time, premium, adjusted or unlimited
 data. Refresh is administrator-only, one asset per request, with a cooldown and a
 conservative local request budget. Provider failure preserves cached records.
-Live provider verification remains deferred until an owner configures the key.
+Real mode reads only the configured real source; unavailable real observations
+remain missing rather than falling back to synthetic prices. Quote dates are
+daily observation dates, not intraday trade timestamps.
+
+Privately configure `ALPHA_VANTAGE_API_KEY` and set `MARKET_PROVIDER` to
+`alpha-vantage` before starting the real-data demo. Import each supported asset
+through the guarded local operator command (wait at least 65 seconds between
+commands; provider limits still apply):
+
+```powershell
+npm run db:market:refresh -w @ifms/api -- AAPL
+# After the cooldown:
+npm run db:market:refresh -w @ifms/api -- MSFT
+# After the cooldown:
+npm run db:market:refresh -w @ifms/api -- NVDA
+```
+
+In real mode, Markets supports dynamic symbol/company discovery through Alpha
+Vantage `SYMBOL_SEARCH`, limited to validated US/USD equities. Selecting a new
+asset loads and caches its actual quote/history; the same asset becomes available
+in portfolio and watchlist selectors. Provider limits and failures are displayed
+explicitly. The operator command also accepts valid symbols such as TSLA/AVGO,
+discovers missing entries, and rejects ambiguous/unsupported assets.
+
+The command requires native development mode and the approved local
+`fyp_portfolio_dev` database. It performs no seeding, role changes or schema
+changes. Successful normalized observations/evidence are saved under ignored
+`.tmp/real-market/` for local acceptance replay. Failure prints only a safe
+category and preserves cached records. See the latest P1 acceptance report for
+actual observed provider access and validation results.
 Yahoo Finance, news providers, OpenAI, external datasets and ML integrations are
 outside this P1 phase. The application does not consume `OPENAI_API_KEY`.
 

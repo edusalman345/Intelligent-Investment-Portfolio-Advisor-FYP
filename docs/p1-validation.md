@@ -1,5 +1,22 @@
 # P1 validation and release checkpoint
 
+## Current increment — 27 October 2026
+
+The original checkpoint below is retained as dated evidence. The current
+feature-by-feature matrix, actual Alpha Vantage access/persistence timestamps,
+Node 24 checks, security patches, accepted snapshot-history limitation and
+deployment investigation are in [p1-real-world-acceptance.md](p1-real-world-acceptance.md).
+Real AAPL/MSFT/NVDA/TSLA/AVGO quotes and 100 daily OHLCV bars each have been
+verified in local PostgreSQL. Dynamic provider discovery is implemented in this
+same working tree. The five-stock real-data browser journey, 53 serial database
+integrations, 28 frontend tests, 27 API unit tests and focused independent review
+pass. Real mode excludes synthetic prices. Final owner retest of the corrected
+TSLA/AVGO search issue remains pending; full owner UAT is not claimed.
+The owner has instructed **no pushes or deployments** pending Vercel settings
+verification. No claim of current remote CI or deployment readiness is made.
+
+## Original 8–9 October checkpoint
+
 Validated on 2026-10-08 on `feature/p1-auth-portfolio-market`, continuing the
 saved implementation rather than recreating it. The approved modules are User
 Authentication, Portfolio Management and Market Data Management. The source
@@ -115,7 +132,7 @@ migration or security control changed. Temporary observations and private
 correlation data remain ignored; no emails, subjects, account identifiers, codes,
 cookies, tokens or credential values are included in this evidence.
 
-## Latest local checks
+## Local checks at the 8–9 October checkpoint
 
 On 2026-10-09, the OAuth investigation reran `npm run lint`,
 `npm run typecheck`, `npm test` (22 frontend and 15 API unit tests), and

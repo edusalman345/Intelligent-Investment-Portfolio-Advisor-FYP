@@ -1,5 +1,8 @@
 # P1 Mid implementation plan
 
+The 27 October real-data completion increment and its acceptance matrix are
+recorded in [p1-real-world-acceptance.md](p1-real-world-acceptance.md).
+
 This plan records the approved scope and concrete implementation choices. Source
 documents are `Proposal.pdf` (Table 1, page 5), `IFMS_PRD_v1.0.docx` (section 10),
 `IFMS_TRD_v1.0.docx` (section 19) and
@@ -84,6 +87,8 @@ session and CSRF token without exposing the bearer cookie.
 | `GET /watchlists/:id`, `PATCH /watchlists/:id`, `DELETE /watchlists/:id` | Owner watchlist detail/rename/delete |
 | `POST /watchlists/:id/items`, `DELETE /watchlists/:id/items/:assetId` | Owner watchlist membership |
 | `GET /assets?q=...`, `/assets/:id`, `/assets/:id/quote` | Authenticated asset search/detail/latest eligible quote |
+| `POST /assets/discover` | Authenticated/CSRF-protected real symbol/company discovery and validated US/USD equity registration; shared provider quotas |
+| `POST /assets/:id/market-data` | Authenticated/CSRF-protected real-cache initialization; existing cache reused; admin refresh rights unchanged |
 | `GET /assets/:id/history?from=YYYY-MM-DD&to=YYYY-MM-DD` | Authenticated bounded daily OHLCV history |
 | `GET /market/economic`, `/market/status` | Authenticated selected observations/provider status |
 | `POST /market/refresh` | Administrator refresh of optional selected `assetId`; CSRF required |
@@ -109,9 +114,14 @@ navigation and responsive tables/forms are part of browser acceptance checking.
   and cost. Explicit deposit/withdrawal/dividend/fee records track cash separately.
 - Latest eligible quotes drive valuation; missing/stale positions are disclosed.
   Valuation history is mutation snapshots, not reconstructed daily performance.
+  The owner explicitly accepted event-driven snapshots, USD-only holdings and
+  separately recorded cash for P1 Mid on 27 October. New snapshots use the
+  configured provider's actual available prices; daily reconstruction remains
+  a potential future enhancement.
 - Seed prices/economic observations are synthetic fixtures. The optional free
   Alpha Vantage daily adapter is directly relevant to the market module, but live
-  verification is deferred and no paid endpoint is used.
+  verification was completed for AAPL/MSFT/NVDA in the 27 October increment.
+  No paid endpoint is used; real mode never substitutes seed observations.
 - No broker settlement, live order execution, paid provider, news, OpenAI, ML
   integration or external training dataset is introduced.
 - Local recovery uses an ignored private outbox; production delivery and
