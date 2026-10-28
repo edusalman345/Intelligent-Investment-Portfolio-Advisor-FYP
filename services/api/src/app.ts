@@ -8,6 +8,7 @@ import { createAuthRouter, type AuthRouterOptions } from './auth.js';
 import { loadAuth } from './auth-context.js';
 import { createPortfolioRouter } from './portfolio.js';
 import { createMarketRouter } from './market.js';
+import { createSubscriptionRouter } from './subscriptions.js';
 import type { MarketProvider } from './market-provider.js';
 import { HttpError } from './errors.js';
 
@@ -41,7 +42,7 @@ export function createApp(options: AuthRouterOptions & { marketProvider?: Market
     message:{error:{code:'RATE_LIMITED',message:'Too many requests. Retry shortly.'}}}));
   app.use('/api/v1/auth',rateLimit({windowMs:10*60_000,limit:60,standardHeaders:'draft-8',legacyHeaders:false,
     message:{error:{code:'AUTH_RATE_LIMITED',message:'Too many authentication requests. Retry later.'}}}));
-  app.use('/api/v1',loadAuth(pool),createAuthRouter(options),createPortfolioRouter({pool,config}),createMarketRouter({pool,config,provider:options.marketProvider}));
+  app.use('/api/v1',loadAuth(pool),createAuthRouter(options),createPortfolioRouter({pool,config}),createMarketRouter({pool,config,provider:options.marketProvider}),createSubscriptionRouter(pool));
   app.use((_request,_response,next)=>next(new HttpError(404,'NOT_FOUND','Endpoint not found.')));
   const errorHandler: ErrorRequestHandler=(error,_request,response,_next)=> {
     let status=500,code='INTERNAL_ERROR',message='The request could not be completed.';

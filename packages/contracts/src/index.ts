@@ -12,3 +12,4 @@ export interface ValuationPosition { assetId: string; symbol: string; quantity: 
 export interface Valuation { asOf: string; baseCurrency: string; totalMarketValue: string; cashValue: string; totalValue: string; unpricedPositionCount: number; stalePositionCount: number; isDemo: boolean; positions: ValuationPosition[] }
 export interface Watchlist { id: string; name: string; createdAt: string; items: { assetId: string; symbol: string; name: string; createdAt: string }[] }
 export interface IngestionRun { id: string; status: string; source: string; recordsReceived: number; recordsWritten: number; issueCount: number; startedAt: string; finishedAt: string | null }
+export interface SubscriptionPlan { id: string; code: string; name: string; description: string; priceMonthly: string | null; currency: 'USD'; status: 'active' | 'coming_soon'; displayOrder: number }

@@ -10,6 +10,16 @@ for AAPL, MSFT and NVDA and a synthetic CPI series. These are not historical mar
 observations or an economic dataset. The UI and API expose demo provenance,
 observation dates and freshness. No external credentials are needed for this demo.
 
+## Additional Subscription Plans prototype
+
+The authenticated `/subscription` page compares the current Free workspace
+($0/month) with Pro (Coming Soon, no price or checkout). It reads the PostgreSQL
+catalog through `GET /api/v1/subscription-plans`. Apply normal migrations to add
+`002_subscription_plans.sql` and its two reference records. All existing users
+retain access; there are no user subscriptions, payments or entitlement checks.
+This enhancement is separate from the original 15 approved P1 Mid features.
+See [validation](docs/p1-validation.md) and [changelog](CHANGELOG.md).
+
 ## Native Windows setup
 
 Use Git, Node **24.x** with its bundled npm, Python **3.13** for analytics/checks,
@@ -233,7 +243,9 @@ use eligible cached prices and disclose stale/unpriced positions; stored history
 contains snapshots created by portfolio mutations, not a daily backtest.
 
 Read the [P1 implementation plan and API inventory](docs/p1-implementation-plan.md)
-for acceptance criteria and tables. Supplied Proposal/PRD/TRD/schema source files
-are owner-provided references and remain unchanged. Production deployment,
+for acceptance criteria and tables. The supplied Proposal remains unchanged.
+The owner-authorized PRD, TRD and schema updates append the separately scoped
+Subscription Plans enhancement; original copies are preserved under ignored
+`.tmp/`. Production deployment,
 Docker/Compose, AWS, later analytics/news/event modules and automatic merging are
 deferred.

@@ -1,5 +1,50 @@
 # P1 validation and release checkpoint
 
+## Subscription Plans enhancement - 27 October 2026
+
+This is an additional informational prototype feature on top of the completed
+P1 Mid baseline at `5eb83b6`. The original 15 approved M1 to M3 features and their
+PASS evidence below remain unchanged. No new approved module is introduced.
+
+- Authenticated `/subscription` route and workspace navigation use existing UI
+  and session protection. Free is Current Plan at USD 0/month for every user.
+- Pro is Coming Soon with no published price, purchase control or available Pro
+  functionality. Its AI insights, risk, forecasting and alerts are planned only.
+- `GET /api/v1/subscription-plans` is an authenticated read-only catalog.
+- Additive `002_subscription_plans.sql` creates and seeds `subscription_plans`.
+  The normal migration ledger handles repeat runs; seeds use `ON CONFLICT`.
+  `001_p1_foundation.sql` is unchanged. Schema: 22 domain tables, 23 including
+  `schema_migrations`; the catalog has primary-key and unique-code indexes.
+- No user subscriptions, billing, checkout, payments or entitlement checks.
+  Existing users require no new record and retain all previous functionality.
+
+| Acceptance/check | Result and evidence |
+|---|---|
+| Protected page and navigation | PASS - frontend tests and `tests/e2e/subscription.spec.ts` |
+| Free price/current plan/features | PASS - USD 0.00 catalog; UI $0/month and Current Plan |
+| Pro availability | PASS - NULL price, Coming Soon, no purchase link/button |
+| Existing access retained | PASS - catalog user can access portfolios/assets/watchlists; full previous integration suite passes |
+| Database values and constraints | PASS - three new catalog integrations; correct two plans, invalid prices/status/currency rejected |
+| Fresh and repeated migration | PASS - generated disposable database, normal migrate twice, stable IDs/two plans/22 domain tables |
+| Whole-repository lint / TypeScript | PASS |
+| Frontend / backend unit tests | PASS - 33 frontend, 27 API unit tests |
+| Complete serial PostgreSQL suite | PASS - 56 tests, including all 53 previous integrations |
+| Frontend/API production builds | PASS - existing bundle-size advisory remains nonblocking |
+| Browser fixture regression + subscription | PASS - two workflows; real-only test intentionally skipped in fixture mode |
+| Existing five-stock real-data browser regression | PASS - recorded actual provider data, no external requests |
+| Desktop/mobile | PASS - 1280x720 and 390x844, no page overflow; settled screenshots inspected |
+| Independent review | PASS - code/security round 1 and final documentation round 2; no unresolved findings |
+| Native local development migration | PASS - normal workflow on approved loopback DB; both plan values verified and user count unchanged |
+| Secret policy and dependency audit | PASS - policy plus two regressions; zero private-value matches including decompressed DOCX XML; npm audit zero vulnerabilities |
+| DOCX structure and preserved baseline | PASS - original content/ZIP parts preserved, additive appendices only |
+| DOCX rendered layout | PASS - PRD 31 pages, TRD 14, schema 29; authored appendices inspected, baseline XML/parts preserved |
+
+Screenshots are stored under `docs/ui-evidence/subscription-2026-10-27/`.
+The PRD, TRD and schema document appendices record this enhancement separately;
+`CHANGELOG.md` records its objective, changed areas and deferred functionality.
+No application credentials or paid services were added. No push, merge,
+deployment or Vercel setting change is authorized by this enhancement.
+
 ## Current increment — 27 October 2026
 
 The original checkpoint below is retained as dated evidence. The current
