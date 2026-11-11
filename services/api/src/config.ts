@@ -7,7 +7,7 @@ if (process.env.NODE_ENV !== 'test' && !process.env.NODE_TEST_CONTEXT && existsS
 export interface AppConfig {
   nodeEnv: string; port: number; host: string; databaseUrl: string; frontendOrigin: string;
   googleClientId: string; googleClientSecret: string; googleCallbackUrl: string;
-  sessionHours: number; cookieSecure: boolean; marketProvider: 'fixture' | 'alpha-vantage';
+  sessionHours: number; cookieSecure: boolean; trustProxyLoopback: boolean; marketProvider: 'fixture' | 'alpha-vantage';
   alphaVantageApiKey: string; quoteMaxAgeHours: number; mailOutputDir: string;
 }
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
@@ -22,8 +22,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     return value;
   };
   const nodeEnv = env.NODE_ENV || 'development';
+  if (env.TRUST_PROXY_LOOPBACK && !['0', '1'].includes(env.TRUST_PROXY_LOOPBACK)) throw new Error('TRUST_PROXY_LOOPBACK must be 0 or 1.');
   return { nodeEnv, port: numeric('PORT', 3001, 1, 65535), host: env.HOST || '127.0.0.1', databaseUrl: env.DATABASE_URL || '', frontendOrigin,
     googleClientId: env.GOOGLE_CLIENT_ID || '', googleClientSecret: env.GOOGLE_CLIENT_SECRET || '', googleCallbackUrl: env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/api/v1/auth/google/callback',
-    sessionHours: numeric('SESSION_HOURS', 24, 1, 168), cookieSecure: nodeEnv === 'production', marketProvider: marketProvider as AppConfig['marketProvider'],
+    sessionHours: numeric('SESSION_HOURS', 24, 1, 168), cookieSecure: nodeEnv === 'production', trustProxyLoopback: env.TRUST_PROXY_LOOPBACK === '1', marketProvider: marketProvider as AppConfig['marketProvider'],
     alphaVantageApiKey: env.ALPHA_VANTAGE_API_KEY || '', quoteMaxAgeHours: numeric('QUOTE_MAX_AGE_HOURS', 72, 1, 720), mailOutputDir: env.MAIL_OUTPUT_DIR || '.tmp/mail' };
 }

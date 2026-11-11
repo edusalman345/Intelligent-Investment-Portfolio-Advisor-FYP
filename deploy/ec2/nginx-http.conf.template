@@ -1,0 +1,13 @@
+# Included inside nginx's http context. Query strings, cookies and bodies are omitted.
+log_format iipa_safe '$remote_addr [$time_local] "$request_method $uri $server_protocol" $status $body_bytes_sent';
+server {
+    listen 80;
+    listen [::]:80;
+    server_name __HOST__;
+    server_tokens off;
+    access_log /var/log/nginx/iipa-access.log iipa_safe;
+    # Nginx error messages may include raw OAuth query strings. Use API request IDs for diagnosis.
+    error_log /dev/null emerg;
+    location ^~ /.well-known/acme-challenge/ { root /var/www/letsencrypt; default_type text/plain; }
+    location / { return 308 https://$host$request_uri; }
+}

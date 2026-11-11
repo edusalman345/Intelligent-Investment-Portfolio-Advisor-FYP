@@ -1,5 +1,36 @@
 # Project changelog
 
+## 28 October 2026 AWS deployment preparation recovery
+
+Status: LOCAL PREPARATION VALIDATED; deployment awaiting explicit owner approval.
+No commit, push, SSH/AWS connection, resource or production-credential change.
+
+Replaced the unfinished PostgreSQL18 installer with reuse of existing Ubuntu
+16/main and loopback peer authentication. Added versioned release activation,
+private configuration/database backup, explicit existing-DB migration opt-in and
+application/configuration rollback; no destructive database restore or down migration.
+Added deterministic Windows packaging, per-file manifest/checksum verification,
+unsafe/duplicate archive rejection, environment validation and the exact EC2 runbook.
+Preserved the public market export/import helpers and original observation times.
+Readiness now checks both immutable migrations 001 and 002; regression covers an
+interrupted subscription migration. Loopback-only proxy trust remains opt-in.
+
+Files: root README/changelog/.env.example; API app/config and proxy/health tests;
+deploy/ec2 bootstrap, rollback, archive/package, PostgreSQL16 validator, private-env
+validator, Nginx/systemd/templates, market/smoke helpers, runbook/validation and tests.
+Historical audits and the approved 15 features plus separate subscription catalog
+remain preserved. No existing migration was changed.
+
+Latest checks: lint/typecheck PASS; frontend35/API29 unit tests PASS; PostgreSQL16
+integrations56 PASS; fresh/repeated migrations and five-stock snapshot import/
+reimport PASS; production builds PASS; dependency audit0 vulnerabilities; deployment
+Python13/smoke2/secret-policy2 regressions PASS; shell/PowerShell syntax PASS;
+archive reproducibility/checksum/extraction PASS. Independent review findings were
+fixed; final code/security review PASS. See deploy/ec2/validation.md for limitations.
+
+Deferred: live Ubuntu deployment, TLS issuance/renewal, public Google OAuth UAT,
+restore/off-instance backup verification and production password-reset delivery.
+
 ## 28 October 2026 IIPA branding alignment
 
 Status: COMPLETE; validated locally, with independent review PASS (round 1).

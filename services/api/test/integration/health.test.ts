@@ -11,12 +11,24 @@ let pool: Pool;
 before(() => { pool = createTestPool(); });
 after(async () => { await pool.end(); });
 
-test('readiness requires a recorded foundation migration in the connected database', async () => {
+test('readiness requires both foundation and subscription migrations in the connected database', async () => {
   await resetDatabase(pool);
   const ready = await request(createApp({ pool, config })).get('/ready');
   assert.equal(ready.status, 200);
   assert.deepEqual(ready.body, { data: { status: 'ready', database: 'connected' } });
   assert.equal((await pool.query("SELECT name FROM schema_migrations WHERE name='001_p1_foundation.sql'")).rowCount, 1);
+  // Simulate an interrupted deployment with 001 applied and 002 not yet recorded.
+  const removed = await pool.query("DELETE FROM schema_migrations WHERE name='002_subscription_plans.sql' RETURNING checksum,applied_at");
+  assert.equal(removed.rowCount, 1);
+  try {
+    const partial = await request(createApp({ pool, config })).get('/ready');
+    assert.equal(partial.status, 503);
+    assert.deepEqual(partial.body, { data: { status: 'not-ready' } });
+  } finally {
+    // Restore only the ledger entry; the catalog schema itself was not changed.
+    await pool.query('INSERT INTO schema_migrations(name,checksum,applied_at) VALUES($1,$2,$3)',
+      ['002_subscription_plans.sql',removed.rows[0].checksum,removed.rows[0].applied_at]);
+  }
   const unmigrated = { query: async () => ({ rows: [{ migrated: false }] }) } as unknown as Pool;
   const waiting = await request(createApp({ pool: unmigrated, config })).get('/ready');
   assert.equal(waiting.status, 503);

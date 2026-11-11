@@ -16,8 +16,8 @@ export function createApp(options: AuthRouterOptions & { marketProvider?: Market
   const { pool,config }=options;
   const app=express();
   app.disable('x-powered-by');
-  // Local development binds loopback; forwarded headers are never trusted implicitly.
-  app.set('trust proxy',false);
+  // Opt-in for the single localhost Nginx proxy; never trust arbitrary remote proxies.
+  app.set('trust proxy',config.trustProxyLoopback ? 'loopback' : false);
   app.use((_request,response,next)=> { response.locals.requestId=randomUUID(); response.set('X-Request-ID',response.locals.requestId); next(); });
   app.use(helmet({ referrerPolicy:{policy:'no-referrer'} }));
   app.use((request,_response,next)=> {
@@ -33,7 +33,8 @@ export function createApp(options: AuthRouterOptions & { marketProvider?: Market
   app.get('/health',(_request,response)=>response.json({data:{status:'ok',service:'ifms-api',phase:'P1 Mid'}}));
   app.get('/ready',async(_request,response)=> {
     try {
-      const result=await pool.query(`SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE name='001_p1_foundation.sql') AS migrated`);
+      const result=await pool.query(`SELECT count(*)=2 AS migrated FROM schema_migrations
+        WHERE name IN ('001_p1_foundation.sql','002_subscription_plans.sql')`);
       if(!result.rows[0]?.migrated) { response.status(503).json({data:{status:'not-ready'}}); return; }
       response.json({data:{status:'ready',database:'connected'}});
     } catch { response.status(503).json({data:{status:'not-ready'}}); }

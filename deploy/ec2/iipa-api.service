@@ -1,0 +1,28 @@
+[Unit]
+Description=IIPA demo Express API
+After=network-online.target postgresql@16-main.service
+Wants=network-online.target
+Requires=postgresql@16-main.service
+
+[Service]
+Type=simple
+User=iipa
+Group=iipa
+WorkingDirectory=/opt/iipa/current
+EnvironmentFile=/etc/iipa/runtime.env
+ExecStart=__NODE__ /opt/iipa/current/services/api/dist/server.js
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=20
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/iipa
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=iipa-api
+
+[Install]
+WantedBy=multi-user.target

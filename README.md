@@ -8,6 +8,12 @@ decision, not a change to the 15 approved features. Internal `@ifms` packages,
 service/cookie identifiers and legacy document filenames remain compatible.
 See the [branding decision and reference inventory](docs/branding.md).
 
+AWS demo preparation is available in the [EC2 deployment runbook](deploy/ec2/README.md)
+and [local deployment validation](deploy/ec2/validation.md). It uses the existing
+Ubuntu PostgreSQL 16/main cluster, Node 24, same-origin HTTPS and versioned releases.
+PostgreSQL 16.15 migrations and integrations are validated locally; Ubuntu runtime
+and public OAuth remain unverified. No AWS deployment is authorized by these files.
+
 P1 implements the three modules selected in the approved Proposal, PRD and TRD:
 User Authentication, Portfolio Management and Market Data Management. The React
 application, Express API and PostgreSQL database run natively on Windows. The
@@ -31,8 +37,9 @@ See [validation](docs/p1-validation.md) and [changelog](CHANGELOG.md).
 ## Native Windows setup
 
 Use Git, Node **24.x** with its bundled npm, Python **3.13** for analytics/checks,
-and PostgreSQL **18** (development validated with 18.6). Install these tools yourself
-if absent. Docker, AWS and deployment setup are deferred.
+and PostgreSQL **18** (development validated with 18.6), or PostgreSQL **16**
+(deployment compatibility validated with 16.15). Install these tools yourself
+if absent. Docker remains deferred; AWS execution requires separate approval.
 
 The root package and lockfile require Node 24, and application CI uses Node 24 on
 Windows and Linux. Check `node --version` before installing dependencies; use a
