@@ -8,6 +8,10 @@ decision, not a change to the 15 approved features. Internal `@ifms` packages,
 service/cookie identifiers and legacy document filenames remain compatible.
 See the [branding decision and reference inventory](docs/branding.md).
 
+For the FYP demonstration on this PC, follow [LOCAL_DEMO_SETUP.md](LOCAL_DEMO_SETUP.md).
+Use `npm run demo:migrate`, `npm run demo:check` and `npm run demo` with Node24;
+these commands guard the approved localhost database and preserve real market data.
+
 AWS demo preparation is available in the [EC2 deployment runbook](deploy/ec2/README.md)
 and [local deployment validation](deploy/ec2/validation.md). It uses the existing
 Ubuntu PostgreSQL 16/main cluster, Node 24, same-origin HTTPS and versioned releases.

@@ -2,7 +2,7 @@ name: P1 application CI
 on:
   pull_request:
   push:
-    branches: [main, 'feature/**']
+    branches: [main, 'feature/**', 'demo/**']
 permissions:
   contents: read
 concurrency:

@@ -40,7 +40,8 @@ test('real stored OHLCV powers buy/sell holdings, valuation, watchlists and secu
   for (const symbol of symbols) {
     const asset = JSON.parse(await readFile(new URL(`../../.tmp/real-market/${symbol}.json`, import.meta.url), 'utf8'));
     const id = asset.asset?.id ?? `10000000-0000-4000-8000-${String(symbols.indexOf(symbol) + 1).padStart(12, '0')}`;
-    await page.goto('/markets');
+    // Use the application's navigation instead of repeatedly reloading its auth session.
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Markets', exact: true }).click();
     await page.getByLabel('Search assets').fill(symbol);
     await page.getByRole('button', {name:'Search',exact:true}).click();
     await page.locator('.asset-catalog-list').getByRole('link').filter({hasText:symbol}).click();
@@ -51,7 +52,7 @@ test('real stored OHLCV powers buy/sell holdings, valuation, watchlists and secu
     expect(quote.isDemo).toBe(false);
     expect(quote.source).toBe('Alpha Vantage free daily data');
     expect(quote.price).toBe(new Decimal(asset.batch.quotes[0].price).toFixed(8));
-    await page.goto(`/markets/${id}`);
+    // The selected asset is already open; keep all detail assertions on that page.
     await expect(page.getByText('End-of-day market data.', { exact: true })).toBeVisible();
     await expect(page.locator('.asset-detail').getByText('DEMO FIXTURE', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Price observations' })).toBeVisible();

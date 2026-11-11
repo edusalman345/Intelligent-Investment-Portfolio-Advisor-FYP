@@ -1,5 +1,39 @@
 # Project changelog
 
+## 11 November 2026 localhost demonstration and GitHub backup
+
+Owner confirmed Vercel suspension before pushing. Baseline backup commit
+`72289282a40a23b26d355be3cab8ea7ae071f4b5` was pushed and verified on
+`demo/localhost-setup` before any localhost code changes. Current PC work was
+preserved; main and the original feature branch were not changed.
+
+Added `LOCAL_DEMO_SETUP.md`, guarded local demo commands/configuration and four
+regressions. The wrapper accepts only the approved development database on
+loopback5432, reuses normal migrations001/002, builds the API and starts compiled
+Express plus Vite. Production/remote targets, query overrides and synthetic
+fallback are rejected. Existing dev commands, authentication/OAuth, module logic,
+AWS deployment files and private environment credentials are preserved.
+P1 CI now validates demo/** branches without deployment commands.
+
+Patched the newly reported development-only minimatch advisory
+GHSA-g3hv-75wg-m249 through a tested11.0.1 override and minimal lockfile update;
+no force downgrade or runtime-module change. Final lint/typecheck, frontend35,
+API33, disposablePG16integration56, migration replay, real recorded-data
+import/persistence and production builds passed; audit reports0vulnerabilities.
+Actual local migrations/23tables/53indexes/247constraints, Free/Pro seeds,
+five-stock real cache, APIhealth/readiness and same-origin session proxy verified.
+Owner confirmed fresh Google login/protectedpage/logout PASS on localhost.
+Ctrl+C stopped both owned listeners and the demo restarted successfully.
+The final combined real-data browser run passed3tests with the synthetic-only
+fourth intentionally skipped; 21desktop/mobile screenshots remain ignored.
+Redundant test-page reloads were replaced with application navigation after the
+initial run hit the unchanged authentication limit; all assertions remain intact.
+
+Independent code/security review PASS(round1). Browser and final validation
+details are recorded in LOCAL_DEMO_SETUP.md. No AWS connection, deployment,
+production restart, main push or merge is part of this task. Personal VS Code
+settings, Proposal and ignored local configuration/artifacts remain on the PC.
+
 ## 28 October 2026 AWS deployment preparation recovery
 
 Status: LOCAL PREPARATION VALIDATED; deployment awaiting explicit owner approval.
